@@ -7,6 +7,10 @@ import java.io.Serializable;
  * Created by xuhao on 2017/5/16.
  */
 public interface ISendable extends Serializable {
+	/**
+	 * 设置流水号
+	 */
+	void setSerialNum(int serialNum);
     /**
      * 数据转化
      *

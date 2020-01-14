@@ -1,18 +1,15 @@
-package com.sziti.easysocketlib;
+package com.sziti.easysocketlib.base;
 
-import com.sziti.easysocketlib.base.ConnectionInfo;
-import com.xuhao.didi.core.utils.SLog;
-import com.xuhao.didi.socket.client.impl.client.abilities.IConnectionSwitchListener;
-import com.xuhao.didi.socket.client.sdk.client.ConnectionInfo;
-import com.xuhao.didi.socket.client.sdk.client.OkSocketOptions;
-import com.xuhao.didi.socket.client.sdk.client.connection.IConnectionManager;
-import com.xuhao.didi.socket.common.interfaces.common_interfacies.server.IServerManager;
-import com.xuhao.didi.socket.common.interfaces.common_interfacies.server.IServerManagerPrivate;
-import com.xuhao.didi.socket.common.interfaces.utils.SPIUtils;
+import com.sziti.easysocketlib.client.delegate.connection.AbsConnectionManager;
+import com.sziti.easysocketlib.client.delegate.connection.ConnectionManagerImpl;
+import com.sziti.easysocketlib.interfaces.connection.IConnectionManager;
+import com.sziti.easysocketlib.interfaces.connection.IConnectionSwitchListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by xuhao on 2017/5/16.
@@ -22,7 +19,7 @@ public class ManagerHolder {
 	//所有的客户端对象
     private volatile Map<ConnectionInfo, IConnectionManager> mConnectionManagerMap = new HashMap<>();
     //所有的服务器对象
-    private volatile Map<Integer, IServerManagerPrivate> mServerManagerMap = new HashMap<>();
+//    private volatile Map<Integer, IServerManagerPrivate> mServerManagerMap = new HashMap<>();
 
     private static class InstanceHolder {
         private static final ManagerHolder INSTANCE = new ManagerHolder();
@@ -36,30 +33,30 @@ public class ManagerHolder {
         mConnectionManagerMap.clear();
     }
 
-    public IServerManager getServer(int localPort) {
-        IServerManagerPrivate manager = mServerManagerMap.get(localPort);
-        if (manager == null) {
-            manager = (IServerManagerPrivate) SPIUtils.load(IServerManager.class);
-            if (manager == null) {
-                String err = "Oksocket.Server() load error. Server plug-in are required!" +
-                        " For details link to https://github.com/xuuhaoo/OkSocket";
-                SLog.e(err);
-                throw new IllegalStateException(err);
-            } else {
-                synchronized (mServerManagerMap) {
-                    mServerManagerMap.put(localPort, manager);
-                }
-                manager.initServerPrivate(localPort);
-                return manager;
-            }
-        }
-        return manager;
-    }
+//    public IServerManager getServer(int localPort) {
+//        IServerManagerPrivate manager = mServerManagerMap.get(localPort);
+//        if (manager == null) {
+//            manager = (IServerManagerPrivate) SPIUtils.load(IServerManager.class);
+//            if (manager == null) {
+//                String err = "Oksocket.Server() load error. Server plug-in are required!" +
+//                        " For details link to https://github.com/xuuhaoo/OkSocket";
+//                SLog.e(err);
+//                throw new IllegalStateException(err);
+//            } else {
+//                synchronized (mServerManagerMap) {
+//                    mServerManagerMap.put(localPort, manager);
+//                }
+//                manager.initServerPrivate(localPort);
+//                return manager;
+//            }
+//        }
+//        return manager;
+//    }
 
     public IConnectionManager getConnection(ConnectionInfo info) {
         IConnectionManager manager = mConnectionManagerMap.get(info);
         if (manager == null) {
-            return getConnection(info, OkSocketOptions.getDefault());
+            return getConnection(info, EasySocketOptions.getDefault());
         } else {
             return getConnection(info, manager.getOption());
         }
@@ -71,7 +68,7 @@ public class ManagerHolder {
 	 * @param okOptions
 	 * @return
 	 */
-    public IConnectionManager getConnection(ConnectionInfo info, OkSocketOptions okOptions) {
+    public IConnectionManager getConnection(ConnectionInfo info, EasySocketOptions okOptions) {
         IConnectionManager manager = mConnectionManagerMap.get(info);
         if (manager != null) {
             if (!okOptions.isConnectionHolden()) {
@@ -94,7 +91,7 @@ public class ManagerHolder {
 	 * @param okOptions
 	 * @return
 	 */
-    private IConnectionManager createNewManagerAndCache(ConnectionInfo info, OkSocketOptions okOptions) {
+    private IConnectionManager createNewManagerAndCache(ConnectionInfo info, EasySocketOptions okOptions) {
         AbsConnectionManager manager = new ConnectionManagerImpl(info);
         manager.option(okOptions);
         manager.setOnConnectionSwitchListener(new IConnectionSwitchListener() {
@@ -129,6 +126,4 @@ public class ManagerHolder {
         }
         return list;
     }
-
-
 }

@@ -1,5 +1,10 @@
 package com.sziti.easysocketlib.interfaces.connection;
 
+import com.sziti.easysocketlib.base.ConnectionInfo;
+import com.sziti.easysocketlib.client.PulseManager;
+import com.sziti.easysocketlib.client.delegate.connection.AbsReconnectionManager;
+import com.sziti.easysocketlib.interfaces.dispatcher.IRegister;
+import com.sziti.easysocketlib.interfaces.action.ISocketActionListener;
 import com.sziti.easysocketlib.interfaces.send.ISender;
 
 /**
@@ -12,7 +17,7 @@ public interface IConnectionManager extends
         IConnectable,
         IDisConnectable,
 	    ISender<IConnectionManager>,
-        IRegister<ISocketActionListener, IConnectionManager> {
+	    IRegister<ISocketActionListener, IConnectionManager> {
     /**
      * 是否连接
      *
@@ -75,5 +80,10 @@ public interface IConnectionManager extends
      * @return 重连管理器
      */
     AbsReconnectionManager getReconnectionManager();
+
+	/**
+	 * 补发管理器，用来管理发送失败的数据
+	 */
+
 }
 

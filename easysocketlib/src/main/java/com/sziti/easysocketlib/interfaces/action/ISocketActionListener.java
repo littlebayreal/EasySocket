@@ -1,10 +1,10 @@
 package com.sziti.easysocketlib.interfaces.action;
 
 
-import com.xuhao.didi.core.iocore.interfaces.IPulseSendable;
-import com.xuhao.didi.core.iocore.interfaces.ISendable;
-import com.xuhao.didi.core.pojo.OriginalData;
-import com.xuhao.didi.socket.client.sdk.client.ConnectionInfo;
+import com.sziti.easysocketlib.base.ConnectionInfo;
+import com.sziti.easysocketlib.client.pojo.OriginalData;
+import com.sziti.easysocketlib.interfaces.send.IPulseSendable;
+import com.sziti.easysocketlib.interfaces.send.ISendable;
 
 /**
  * socket连接的回调接口

@@ -15,6 +15,7 @@ public final class ConnectionInfo implements Serializable, Cloneable {
      * 连接服务器端口号
      */
     private int mPort;
+
     /**
      * 当此IP地址Ping不通时的备用IP
      */

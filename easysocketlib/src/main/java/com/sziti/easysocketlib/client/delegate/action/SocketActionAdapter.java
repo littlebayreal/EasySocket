@@ -1,9 +1,11 @@
-package com.sziti.easysocketlib.interfaces.action;
+package com.sziti.easysocketlib.client.delegate.action;
 
-import com.xuhao.didi.core.iocore.interfaces.IPulseSendable;
-import com.xuhao.didi.core.iocore.interfaces.ISendable;
-import com.xuhao.didi.core.pojo.OriginalData;
-import com.xuhao.didi.socket.client.sdk.client.ConnectionInfo;
+import com.sziti.easysocketlib.base.ConnectionInfo;
+import com.sziti.easysocketlib.client.pojo.OriginalData;
+import com.sziti.easysocketlib.interfaces.action.IAction;
+import com.sziti.easysocketlib.interfaces.action.ISocketActionListener;
+import com.sziti.easysocketlib.interfaces.send.IPulseSendable;
+import com.sziti.easysocketlib.interfaces.send.ISendable;
 
 /**
  * Socket行为适配器,是行为监听器的一个Simple版本,详情请见{@link ISocketActionListener}
