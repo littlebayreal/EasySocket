@@ -43,4 +43,31 @@ public abstract class BaseSendData implements ISendable {
 		byte[] sendbytes = BitOperator.concatAll(flag, srcbytes, check, flag);
 		return sendbytes;
 	}
+
+	public boolean isReSend() {
+		return reSend;
+	}
+
+	public void setReSend(boolean reSend) {
+		this.reSend = reSend;
+	}
+
+	public long getSendStamp() {
+		return sendStamp;
+	}
+
+	public void setSendStamp(long sendStamp) {
+		this.sendStamp = sendStamp;
+	}
+
+	public int getSendTimes() {
+		return sendTimes;
+	}
+
+	public void setSendTimes(int sendTimes) {
+		this.sendTimes = sendTimes;
+	}
+	public boolean checkResend() {
+		return System.currentTimeMillis() - sendStamp >=(4 - sendTimes) * 10000;
+	}
 }

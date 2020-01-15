@@ -11,6 +11,7 @@ import java.util.Iterator;
 /**
  * Created by xuhao on 2017/6/5.
  * 默认的重连管理器
+ * 事件驱动
  */
 
 public class DefaultReconnectManager extends AbsReconnectionManager {

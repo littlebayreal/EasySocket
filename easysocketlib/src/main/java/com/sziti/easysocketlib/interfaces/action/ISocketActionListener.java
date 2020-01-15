@@ -13,7 +13,7 @@ public interface ISocketActionListener {
     /**
      * Socket通讯IO线程的启动<br>
      * 该方法调用后IO线程将会正常工作<br>
-     * 例如InputStream线程启动后,讲回调此方法,如果OutPutStream线程启动,也会回调此方法.<br>
+     * 例如InputStream线程启动后,将会调此方法,如果OutPutStream线程启动,也会回调此方法.<br>
      * 一次成功的双工通讯建立,会调用此方法两次.<br>
      * @param action {@link IAction#ACTION_READ_THREAD_START}
      *               {@link  IAction#ACTION_WRITE_THREAD_START}
@@ -22,7 +22,7 @@ public interface ISocketActionListener {
     /**
      * Socket通讯IO线程的关闭<br>
      * 该方法调用后IO线程将彻底死亡<br>
-     * 例如InputStream线程销毁后,讲回调此方法,如果OutPutStream线程销毁,也会回调此方法.<br>
+     * 例如InputStream线程销毁后,将会调此方法,如果OutPutStream线程销毁,也会回调此方法.<br>
      * 一次成功的双工通讯销毁,会调用此方法两次.<br>
      * @param action {@link IAction#ACTION_READ_THREAD_SHUTDOWN}
      *               {@link  IAction#ACTION_WRITE_THREAD_SHUTDOWN}

@@ -113,10 +113,10 @@ public class ConnectionManagerImpl extends AbsConnectionManager {
         mActionHandler.attach(this, this);
         SLog.i("mActionHandler is attached.");
         //重连管理器重新生成
-        if (mReconnectionManager != null) {
-            mReconnectionManager.detach();
-            SLog.i("ReconnectionManager is detached.");
-        }
+		if (mReconnectionManager != null) {
+			mReconnectionManager.detach();
+			SLog.i("ReconnectionManager is detached.");
+		}
         //设置重连管理
         mReconnectionManager = mOptions.getReconnectionManager();
         if (mReconnectionManager != null) {

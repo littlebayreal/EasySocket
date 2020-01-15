@@ -80,10 +80,5 @@ public interface IConnectionManager extends
      * @return 重连管理器
      */
     AbsReconnectionManager getReconnectionManager();
-
-	/**
-	 * 补发管理器，用来管理发送失败的数据
-	 */
-
 }
 
