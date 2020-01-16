@@ -26,16 +26,12 @@ public class WriterImpl implements IWriter<IIOCoreOptions> {
     private IStateSender mStateSender;
 
     private OutputStream mOutputStream;
-    //发送的流水号
-    private int mSerialNum;
     private LinkedBlockingQueue<ISendable> mQueue = new LinkedBlockingQueue<>();
 
     @Override
     public void initialize(OutputStream outputStream, IStateSender stateSender) {
         mStateSender = stateSender;
         mOutputStream = outputStream;
-        if (mOkOptions.getIsOpenSerialNum())
-        mSerialNum = 1;
     }
 
     @Override
@@ -49,9 +45,6 @@ public class WriterImpl implements IWriter<IIOCoreOptions> {
 
         if (sendable != null) {
             try {
-            	//根据配置 设置报文流水号
-            	if (mOkOptions.getIsOpenSerialNum())
-            		sendable.setSerialNum(mSerialNum);
                 byte[] sendBytes = sendable.parse();
                 int packageSize = mOkOptions.getWritePackageBytes();
                 int remainingCount = sendBytes.length;
@@ -99,8 +92,6 @@ public class WriterImpl implements IWriter<IIOCoreOptions> {
 
     @Override
     public void offer(ISendable sendable) {
-    	mSerialNum++;
-    	if (mSerialNum > 0xffff)mSerialNum = 1;
         mQueue.offer(sendable);
     }
 
@@ -114,6 +105,4 @@ public class WriterImpl implements IWriter<IIOCoreOptions> {
             }
         }
     }
-
-
 }

@@ -9,7 +9,7 @@ import com.sziti.easysocketlib.interfaces.send.ISendable;
  */
 public interface ISocketResendActionListener extends ISocketActionListener{
 	/**
-	 * Socket通讯写出失败后的回调<br>
+	 * Socket通讯发送失败后的回调<br>
 	 * @param action {@link IOResendAction#ACTION_RESEND_REQUEST}
 	 * @param data { 写出的数据{@link BaseSendData}}
 	 */

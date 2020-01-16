@@ -6,12 +6,14 @@ import com.sziti.easysocketlib.base.EasySocketOptions;
 import com.sziti.easysocketlib.client.PulseManager;
 import com.sziti.easysocketlib.client.ResendManager;
 import com.sziti.easysocketlib.client.dispatcher.ActionHandler;
+import com.sziti.easysocketlib.client.dispatcher.ActionResendDispatcher;
+import com.sziti.easysocketlib.exceptions.ManuallyDisconnectException;
 import com.sziti.easysocketlib.exceptions.UnConnectException;
 import com.sziti.easysocketlib.interfaces.action.IAction;
 import com.sziti.easysocketlib.interfaces.connection.IConnectionManager;
 import com.sziti.easysocketlib.interfaces.io.IIOManager;
 import com.sziti.easysocketlib.interfaces.send.ISendable;
-import com.sziti.easysocketlib.iothreads.IOThreadManager;
+import com.sziti.easysocketlib.iothreads.ResendIOThreadManager;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -80,8 +82,9 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 		if (localInfo != null) {
 			SLog.i("binding local addr:" + localInfo.getIp() + " port:" + localInfo.getPort());
 		}
+		//设置带有重发功能分发者
+		setCustomDispatcher(new ActionResendDispatcher(remoteInfo,this));
 	}
-
 	@Override
 	public boolean isConnect() {
 		if (mSocket == null) {
@@ -92,37 +95,59 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 
 	@Override
 	public boolean isDisconnecting() {
-		return false;
+		return isDisconnecting;
 	}
 
 	@Override
 	public PulseManager getPulseManager() {
-		return null;
+		return mPulseManager;
 	}
 
 	@Override
 	public void setIsConnectionHolder(boolean isHold) {
-
+		mOptions = new EasySocketOptions.Builder(mOptions).setConnectionHolden(isHold).build();
 	}
 
 	@Override
 	public void setLocalConnectionInfo(ConnectionInfo localConnectionInfo) {
-
+		if (isConnect()) {
+			throw new IllegalStateException("Socket is connected, can't set local info after connect.");
+		}
+		mLocalConnectionInfo = localConnectionInfo;
 	}
 
 	@Override
 	public AbsReconnectionManager getReconnectionManager() {
-		return null;
+		return mOptions.getReconnectionManager();
 	}
 
 	@Override
 	public IConnectionManager option(EasySocketOptions okOptions) {
-		return null;
+		if (okOptions == null) {
+			return this;
+		}
+		mOptions = okOptions;
+		if (mManager != null) {
+			mManager.setOkOptions(mOptions);
+		}
+
+		if (mPulseManager != null) {
+			mPulseManager.setOkOptions(mOptions);
+		}
+		if (mReconnectionManager != null && !mReconnectionManager.equals(mOptions.getReconnectionManager())) {
+			if (mReconnectionManager != null) {
+				mReconnectionManager.detach();
+			}
+			SLog.i("reconnection manager is replaced");
+			mReconnectionManager = mOptions.getReconnectionManager();
+			mReconnectionManager.attach(this);
+		}
+		return this;
 	}
 
 	@Override
 	public EasySocketOptions getOption() {
-		return null;
+		return mOptions;
 	}
 
 	@Override
@@ -211,7 +236,7 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 		//初始化补发管理器
         mResndManager = new ResendManager(this,mActionDispatcher);
 		//初始化socket的读写进程
-		mManager = new IOThreadManager(
+		mManager = new ResendIOThreadManager(
 			mSocket.getInputStream(),
 			mSocket.getOutputStream(),
 			mOptions,
@@ -219,17 +244,102 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 		mManager.startEngine();
 	}
 	@Override
-	public void disconnect(Exception e) {
+	public void disconnect(Exception exception) {
+		synchronized (this) {
+			if (isDisconnecting) {
+				return;
+			}
+			isDisconnecting = true;
 
+			if (mPulseManager != null) {
+				mPulseManager.dead();
+				mPulseManager = null;
+			}
+		}
+
+		if (exception instanceof ManuallyDisconnectException) {
+			if (mReconnectionManager != null) {
+				mReconnectionManager.detach();
+				SLog.i("ReconnectionManager is detached.");
+			}
+		}
+		//使用子线程进行socket通道的断连
+		synchronized (this) {
+			String info = mRemoteConnectionInfo.getIp() + ":" + mRemoteConnectionInfo.getPort();
+			DisconnectThread thread = new DisconnectThread(exception, "Disconnect Thread for " + info);
+			thread.setDaemon(true);
+			thread.start();
+		}
 	}
 
 	@Override
 	public void disconnect() {
-
+		disconnect(new ManuallyDisconnectException());
 	}
 
 	@Override
 	public IConnectionManager send(ISendable sendable) {
-		return null;
+		if (mManager != null && sendable != null && isConnect()) {
+			mManager.send(sendable);
+		}
+		return this;
+	}
+
+	private class DisconnectThread extends Thread {
+		private Exception mException;
+
+		public DisconnectThread(Exception exception, String name) {
+			super(name);
+			mException = exception;
+		}
+
+		@Override
+		public void run() {
+			try {
+				if (mManager != null) {
+					mManager.close(mException);
+				}
+
+				if (mConnectThread != null && mConnectThread.isAlive()) {
+					mConnectThread.interrupt();
+					try {
+						SLog.i("disconnect thread need waiting for connection thread done.");
+						mConnectThread.join();
+					} catch (InterruptedException e) {
+					}
+					SLog.i("connection thread is done. disconnection thread going on");
+					mConnectThread = null;
+				}
+
+				if (mSocket != null) {
+					try {
+						mSocket.close();
+					} catch (IOException e) {
+					}
+				}
+
+				if (mActionHandler != null) {
+					mActionHandler.detach(AutoResendConnectionManagerImpl.this);
+					SLog.i("mActionHandler is detached.");
+					mActionHandler = null;
+				}
+
+			} finally {
+				isDisconnecting = false;
+				isConnectionPermitted = true;
+				if (!(mException instanceof UnConnectException) && mSocket != null) {
+					mException = mException instanceof ManuallyDisconnectException ? null : mException;
+					sendBroadcast(IAction.ACTION_DISCONNECTION, mException);
+				}
+				mSocket = null;
+
+				if (mException != null) {
+					SLog.e("socket is disconnecting because: " + mException.getMessage());
+					if (mOptions.isDebug()) {
+						mException.printStackTrace();
+					}
+				}
+			}
+		}
 	}
 }

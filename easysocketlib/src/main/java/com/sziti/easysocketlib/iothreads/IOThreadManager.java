@@ -23,17 +23,17 @@ import java.io.OutputStream;
 
 public class IOThreadManager implements IIOManager<EasySocketOptions> {
 
-    private InputStream mInputStream;
+    protected InputStream mInputStream;
 
-    private OutputStream mOutputStream;
+    protected OutputStream mOutputStream;
 
     private volatile EasySocketOptions mOkOptions;
 
-    private IStateSender mSender;
+    protected IStateSender mSender;
 
-    private IReader mReader;
+    protected IReader mReader;
 
-    private IWriter mWriter;
+	protected IWriter mWriter;
 
     private AbsLoopThread mSimplexThread;
 
@@ -54,7 +54,7 @@ public class IOThreadManager implements IIOManager<EasySocketOptions> {
         initIO();
     }
 
-    private void initIO() {
+    public void initIO() {
     	//检测协议头是否正常
         assertHeaderProtocolNotEmpty();
         mReader = new ReaderImpl();
@@ -147,7 +147,7 @@ public class IOThreadManager implements IIOManager<EasySocketOptions> {
         mCurrentThreadMode = null;
     }
 
-    private void assertHeaderProtocolNotEmpty() {
+    public void assertHeaderProtocolNotEmpty() {
         IReaderProtocol protocol = mOkOptions.getReaderProtocol();
         if (protocol == null) {
             throw new IllegalArgumentException("The reader protocol can not be Null.");

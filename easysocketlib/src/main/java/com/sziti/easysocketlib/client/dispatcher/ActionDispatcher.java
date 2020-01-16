@@ -58,7 +58,7 @@ public class ActionDispatcher implements IRegister<ISocketActionListener, IConne
     /**
      * 连接信息
      */
-    private volatile ConnectionInfo mConnectionInfo;
+    protected volatile ConnectionInfo mConnectionInfo;
     /**
      * 连接管理器
      */
@@ -99,7 +99,7 @@ public class ActionDispatcher implements IRegister<ISocketActionListener, IConne
      * @param arg
      * @param responseHandler
      */
-    private void dispatchActionToListener(String action, Serializable arg, ISocketActionListener responseHandler) {
+    public void dispatchActionToListener(String action, Serializable arg, ISocketActionListener responseHandler) {
         switch (action) {
             case ACTION_CONNECTION_SUCCESS: {
                 try {

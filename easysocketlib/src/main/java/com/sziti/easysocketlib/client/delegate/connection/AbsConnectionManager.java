@@ -97,4 +97,12 @@ public abstract class AbsConnectionManager implements IConnectionManager {
     public void setOnConnectionSwitchListener(IConnectionSwitchListener listener) {
         mConnectionSwitchListener = listener;
     }
+
+	/**
+	 * 设置自定义的状态机
+	 * @param actionDispatcher
+	 */
+	public void setCustomDispatcher(ActionDispatcher actionDispatcher){
+    	mActionDispatcher = actionDispatcher;
+	}
 }
