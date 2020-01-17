@@ -20,5 +20,5 @@ public interface IIOCoreOptions {
 
     boolean isDebug();
     //打开流水号
-    boolean getIsOpenSerialNum();
+//    boolean getIsOpenSerialNum();
 }

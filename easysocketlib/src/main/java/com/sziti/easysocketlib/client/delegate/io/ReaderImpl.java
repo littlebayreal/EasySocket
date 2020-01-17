@@ -31,11 +31,13 @@ public class ReaderImpl extends AbsReader {
         //设置byte数组是大端在前还是小端在前
         headBuf.order(mOkOptions.getReadByteOrder());
         try {
+        	//处理剩余字节
             if (mRemainingBuf != null) {
                 mRemainingBuf.flip();
                 //比较缓存区剩余字节和头协议长度最小
                 int length = Math.min(mRemainingBuf.remaining(), headerLength);
                 headBuf.put(mRemainingBuf.array(), 0, length);
+                //如果剩余字节小于头字节长度定义
                 if (length < headerLength) {
                     //there are no data left
                     mRemainingBuf = null;
@@ -73,12 +75,12 @@ public class ReaderImpl extends AbsReader {
                     byteBuffer.put(mRemainingBuf.array(), bodyStartPosition, length);
                     mRemainingBuf.position(bodyStartPosition + length);
                     if (length == bodyLength) {
-                        if (mRemainingBuf.remaining() > 0) {//there are data left
+                        if (mRemainingBuf.remaining() > 0) {//there are data left 将剩下的数据保存
                             ByteBuffer temp = ByteBuffer.allocate(mRemainingBuf.remaining());
                             temp.order(mOkOptions.getReadByteOrder());
                             temp.put(mRemainingBuf.array(), mRemainingBuf.position(), mRemainingBuf.remaining());
                             mRemainingBuf = temp;
-                        } else {//there are no data left
+                        } else {//there are no data left  无数据清空
                             mRemainingBuf = null;
                         }
                         //拿到body内容  并且将解析好的报文对象回传
@@ -90,6 +92,7 @@ public class ReaderImpl extends AbsReader {
                         mRemainingBuf = null;
                     }
                 }
+                //读取body
                 readBodyFromChannel(byteBuffer);
                 originalData.setBodyBytes(byteBuffer.array());
             } else if (bodyLength == 0) {
@@ -120,6 +123,7 @@ public class ReaderImpl extends AbsReader {
         for (int i = 0; i < readLength; i++) {
             byte[] bytes = new byte[1];
             int value = mInputStream.read(bytes);
+            //如果从输入流中读取的长度等于-1，那么意味着连接管道已断开，抛出错误，框架会自动处理
             if (value == -1) {
                 throw new ReadException(
                         "read head is wrong, this socket input stream is end of file read " + value + " ,that mean this socket is disconnected by server");
@@ -129,6 +133,7 @@ public class ReaderImpl extends AbsReader {
     }
 
     private void readBodyFromChannel(ByteBuffer byteBuffer) throws IOException {
+    	//缓存区还有缓存空间就一直读取
         while (byteBuffer.hasRemaining()) {
             try {
                 byte[] bufArray = new byte[mOkOptions.getReadPackageBytes()];
@@ -137,7 +142,9 @@ public class ReaderImpl extends AbsReader {
                     break;
                 }
                 int remaining = byteBuffer.remaining();
+                //如果底层缓存区数据长度大于byteBuffer长度 那么就保存到mRemainingBuf
                 if (len > remaining) {
+                	//bytebuff只是收集到容量最大的字节数量 接下去的会放到mRemainingBuf等待下一次处理
                     byteBuffer.put(bufArray, 0, remaining);
                     mRemainingBuf = ByteBuffer.allocate(len - remaining);
                     mRemainingBuf.order(mOkOptions.getReadByteOrder());

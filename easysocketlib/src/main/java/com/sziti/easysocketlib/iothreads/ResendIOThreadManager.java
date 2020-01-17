@@ -1,9 +1,8 @@
 package com.sziti.easysocketlib.iothreads;
 
 import com.sziti.easysocketlib.base.EasySocketOptions;
-import com.sziti.easysocketlib.client.delegate.io.ReaderImpl;
+import com.sziti.easysocketlib.client.delegate.io.ResendReaderImpl;
 import com.sziti.easysocketlib.client.delegate.io.ResendWriterImpl;
-import com.sziti.easysocketlib.client.delegate.io.WriterImpl;
 import com.sziti.easysocketlib.interfaces.io.IStateSender;
 
 import java.io.InputStream;
@@ -22,7 +21,7 @@ public class ResendIOThreadManager extends IOThreadManager{
 	public void initIO() {
 		//检测协议头是否正常
 		assertHeaderProtocolNotEmpty();
-		mReader = new ReaderImpl();
+		mReader = new ResendReaderImpl();
 		mReader.initialize(mInputStream, mSender);
 		mWriter = new ResendWriterImpl();
 		mWriter.initialize(mOutputStream, mSender);

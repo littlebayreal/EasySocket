@@ -1,8 +1,10 @@
 package com.sziti.easysocketlib.base;
 
+import com.sziti.easysocketlib.client.delegate.action.AbsSocketResendHandler;
 import com.sziti.easysocketlib.client.delegate.connection.AbsReconnectionManager;
 import com.sziti.easysocketlib.client.delegate.connection.DefaultReconnectManager;
 import com.sziti.easysocketlib.client.dispatcher.ActionDispatcher;
+import com.sziti.easysocketlib.client.dispatcher.DefaultResendActionHandler;
 import com.sziti.easysocketlib.exceptions.DogDeadException;
 import com.sziti.easysocketlib.interfaces.connection.IConfiguration;
 import com.sziti.easysocketlib.interfaces.io.IIOCoreOptions;
@@ -79,7 +81,11 @@ public class EasySocketOptions implements IIOCoreOptions {
      * 重新连接管理器
      */
     private AbsReconnectionManager mReconnectionManager;
-    /**
+	/**
+	 * socket数据重发控制器
+	 */
+	private AbsSocketResendHandler mSocketResendHandler;
+	/**
      * 安全套接字层配置
      */
     private OkSocketSSLConfig mSSLConfig;
@@ -96,10 +102,6 @@ public class EasySocketOptions implements IIOCoreOptions {
      */
     private ThreadModeToken mCallbackThreadModeToken;
 
-	/**
-	 * 是否打开流水号配置
-	 */
-	private boolean isOpenSerialNum;
 
 	private EasySocketOptions() {
     }
@@ -316,9 +318,10 @@ public class EasySocketOptions implements IIOCoreOptions {
             mOptions.mCallbackThreadModeToken = threadModeToken;
             return this;
         }
-        public Builder setOpenSerialNum(boolean isOpen){
-        	mOptions.isOpenSerialNum = isOpen;
-        	return this;
+
+		public Builder setSocketResendHandler(AbsSocketResendHandler absSocketResendHandler) {
+			mOptions.mSocketResendHandler = absSocketResendHandler;
+			return this;
 		}
         public EasySocketOptions build() {
             return mOptions;
@@ -362,19 +365,6 @@ public class EasySocketOptions implements IIOCoreOptions {
     }
 
 	@Override
-	public boolean getIsOpenSerialNum() {
-		return isOpenSerialNum;
-	}
-
-	public boolean isOpenSerialNum() {
-		return isOpenSerialNum;
-	}
-
-	public void setOpenSerialNum(boolean openSerialNum) {
-		isOpenSerialNum = openSerialNum;
-	}
-
-	@Override
     public int getWritePackageBytes() {
         return mWritePackageBytes;
     }
@@ -412,7 +402,15 @@ public class EasySocketOptions implements IIOCoreOptions {
         return isCallbackInIndependentThread;
     }
 
-    public static EasySocketOptions getDefault() {
+	public AbsSocketResendHandler getmSocketResendHandler() {
+		return mSocketResendHandler;
+	}
+
+	public void setmSocketResendHandler(AbsSocketResendHandler mSocketResendHandler) {
+		this.mSocketResendHandler = mSocketResendHandler;
+	}
+
+	public static EasySocketOptions getDefault() {
         EasySocketOptions okOptions = new EasySocketOptions();
         okOptions.mPulseFrequency = 5 * 1000;
         okOptions.mIOThreadMode = IOThreadMode.DUPLEX;
@@ -430,7 +428,7 @@ public class EasySocketOptions implements IIOCoreOptions {
         okOptions.mOkSocketFactory = null;
         okOptions.isCallbackInIndependentThread = true;
         okOptions.mCallbackThreadModeToken = null;
-        okOptions.isOpenSerialNum = true;
+        okOptions.mSocketResendHandler = new DefaultResendActionHandler();
         return okOptions;
     }
 

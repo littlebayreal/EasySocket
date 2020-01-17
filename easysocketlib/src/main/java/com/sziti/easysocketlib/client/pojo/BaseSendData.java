@@ -23,11 +23,6 @@ public abstract class BaseSendData implements ISendable {
 	public abstract byte[] generateBodyBytes();
 
 	@Override
-	public void setSerialNum(int serialNum) {
-		mProtocolHeader.setSerialNum(serialNum);
-	}
-
-	@Override
 	public byte[] parse() {
 		byte[] bodybytes = generateBodyBytes();
 		mProtocolHeader.setBodyLength(bodybytes.length);

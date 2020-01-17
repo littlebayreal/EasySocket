@@ -7,4 +7,6 @@ public interface IResend<BaseSendData> {
 	void remove(BaseSendData data);
 	//停止重发
 	void dead();
+	//开始重发任务线程
+	void startEngine();
 }

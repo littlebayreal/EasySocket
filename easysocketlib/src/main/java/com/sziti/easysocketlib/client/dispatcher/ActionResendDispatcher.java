@@ -1,7 +1,7 @@
 package com.sziti.easysocketlib.client.dispatcher;
 
 import com.sziti.easysocketlib.base.ConnectionInfo;
-import com.sziti.easysocketlib.client.delegate.action.SocketResendActionAdapter;
+import com.sziti.easysocketlib.client.delegate.action.AbsSocketResendHandler;
 import com.sziti.easysocketlib.client.pojo.BaseSendData;
 import com.sziti.easysocketlib.client.pojo.OriginalData;
 import com.sziti.easysocketlib.interfaces.action.ISocketActionListener;
@@ -86,7 +86,7 @@ public class ActionResendDispatcher extends ActionDispatcher{
 			case ACTION_RESEND_REQUEST://需要重发的报文
 				try {
 					BaseSendData sendable = (BaseSendData) arg;
-					SocketResendActionAdapter resendAcitonAdapter = (SocketResendActionAdapter) responseHandler;
+					AbsSocketResendHandler resendAcitonAdapter = (AbsSocketResendHandler) responseHandler;
 					resendAcitonAdapter.onSocketWriteFailed( action, sendable);
 				} catch (Exception e) {
 					e.printStackTrace();

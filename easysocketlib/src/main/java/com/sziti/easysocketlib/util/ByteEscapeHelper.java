@@ -9,8 +9,6 @@ import java.io.IOException;
  */
 
 public class ByteEscapeHelper {
-
-
     /**
      * 对byte数组进行转义
      * 0x7e<——>0x7d后紧跟一个0x5e

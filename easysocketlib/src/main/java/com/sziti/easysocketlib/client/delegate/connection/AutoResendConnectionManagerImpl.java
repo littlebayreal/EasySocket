@@ -5,8 +5,10 @@ import com.sziti.easysocketlib.base.ConnectionInfo;
 import com.sziti.easysocketlib.base.EasySocketOptions;
 import com.sziti.easysocketlib.client.PulseManager;
 import com.sziti.easysocketlib.client.ResendManager;
+import com.sziti.easysocketlib.client.delegate.action.AbsSocketResendHandler;
 import com.sziti.easysocketlib.client.dispatcher.ActionHandler;
 import com.sziti.easysocketlib.client.dispatcher.ActionResendDispatcher;
+import com.sziti.easysocketlib.client.dispatcher.DefaultResendActionHandler;
 import com.sziti.easysocketlib.exceptions.ManuallyDisconnectException;
 import com.sziti.easysocketlib.exceptions.UnConnectException;
 import com.sziti.easysocketlib.interfaces.action.IAction;
@@ -33,6 +35,10 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 	 */
 	private ActionHandler mActionHandler;
 	/**
+	 * 重发行为处理器
+	 */
+	private AbsSocketResendHandler mResendActionHandler;
+	/**
 	 * 连接线程
 	 */
 	private Thread mConnectThread;
@@ -43,7 +49,7 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 	/**
 	 * 补发管理器
 	 */
-	private volatile ResendManager mResndManager;
+	private volatile ResendManager mResendManager;
 	/**
 	 * IO通讯管理器  它才是实际上的收发数据的管理器
 	 */
@@ -121,6 +127,9 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 		return mOptions.getReconnectionManager();
 	}
 
+	public AbsSocketResendHandler getSocketResendHander(){
+		return mOptions.getmSocketResendHandler();
+	}
 	@Override
 	public IConnectionManager option(EasySocketOptions okOptions) {
 		if (okOptions == null) {
@@ -176,6 +185,7 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 		//让ActionDispatcher绑定回调监听类  能够使socket的消息分发出来
 		mActionHandler.attach(this, this);
 		SLog.i("mActionHandler is attached.");
+
 		//重连管理器重新生成
 		if (mReconnectionManager != null) {
 			mReconnectionManager.detach();
@@ -233,8 +243,18 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 	private void resolveManager() throws IOException {
 		//初始化心跳管理器
 		mPulseManager = new PulseManager(this, mOptions);
-		//初始化补发管理器
-        mResndManager = new ResendManager(this,mActionDispatcher);
+		//初始化补发管理器以及补发事件监听处理器
+		if (mResendManager == null)
+        mResendManager = new ResendManager(this,mActionDispatcher);
+
+		if (mResendActionHandler != null){
+			mResendActionHandler.detach(this);
+			SLog.i("mResendActionHandler is detached.");
+		}
+		mResendActionHandler = mOptions.getmSocketResendHandler();
+		mResendActionHandler.attach(this,mResendManager,this);
+		SLog.i("mResendActionHandler is attached.");
+
 		//初始化socket的读写进程
 		mManager = new ResendIOThreadManager(
 			mSocket.getInputStream(),
@@ -254,6 +274,10 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 			if (mPulseManager != null) {
 				mPulseManager.dead();
 				mPulseManager = null;
+			}
+
+			if (mResendManager != null){
+				mResendActionHandler.dead();
 			}
 		}
 
@@ -279,6 +303,9 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 
 	@Override
 	public IConnectionManager send(ISendable sendable) {
+		//在发送之前先放入补发线程
+		mResendActionHandler.addForResend(sendable);
+
 		if (mManager != null && sendable != null && isConnect()) {
 			mManager.send(sendable);
 		}

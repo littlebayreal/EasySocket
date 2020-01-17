@@ -93,7 +93,6 @@ public class Jt808ProtocolHeader implements IHeaderProtocol {
          mJt808ProtocolHeader.setHasSubPackage(false);
          mJt808ProtocolHeader.setReservedBit(0);
          mJt808ProtocolHeader.setTerminalPhone(APIConfig.terminal_id);
-         //默认配置流水号为0  如果在EasySocket中配置了流水号打开，那么会不断自增
          mJt808ProtocolHeader.setFlowId(0);
          return mJt808ProtocolHeader;
 	}
@@ -149,7 +148,7 @@ public class Jt808ProtocolHeader implements IHeaderProtocol {
 	public int getFlowId() {
 		return flowId;
 	}
-
+	//在报文发送成功后都要将流水号更新
 	public void setFlowId(int flowId) {
 		this.flowId = flowId;
 	}
@@ -176,11 +175,6 @@ public class Jt808ProtocolHeader implements IHeaderProtocol {
 
 	public void setSubPackageSeq(long subPackageSeq) {
 		this.subPackageSeq = subPackageSeq;
-	}
-
-	@Override
-	public void setSerialNum(int serialNum) {
-		setFlowId(serialNum);
 	}
 
 	@Override
