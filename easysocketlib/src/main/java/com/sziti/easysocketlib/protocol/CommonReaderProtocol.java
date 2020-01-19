@@ -13,8 +13,10 @@ public class CommonReaderProtocol implements IReaderProtocol {
 	/**
 	 * 解析方式 分为两种 通过分隔符解析以及通过整包长度解析
 	 */
-	public final int PROTOCOL_RESOLUTION_BY_DELIMITER = 0x0001;
-	public final int PROTOCOL_RESOLUTION_BY_PACKAGE_LENGTH = 0x0002;
+	public static final int PROTOCOL_RESOLUTION_BY_DELIMITER = 0x0001;
+	public static final int PROTOCOL_RESOLUTION_BY_PACKAGE_LENGTH = 0x0002;
+
+	private int mResolveType;
 	/**
 	 * 分隔符
 	 */
@@ -35,15 +37,18 @@ public class CommonReaderProtocol implements IReaderProtocol {
 	 * 如果选择解析方式为分隔符解析，那么转义处理类不能为空
 	 */
 	private IByteEscape mIByteEscape;
-	public CommonReaderProtocol(int mHeaderLength,int mDelimiter, int mBodyLengthIndex, int mBodyLengthSize) {
-		this( mDelimiter,mBodyLengthIndex, mBodyLengthSize, mHeaderLength,null);
+	private boolean isOpenCheck;
+	public CommonReaderProtocol(int mResolveType,int mHeaderLength,int mDelimiter, int mBodyLengthIndex, int mBodyLengthSize,boolean isOpenCheck) {
+		this(mResolveType,mDelimiter,mBodyLengthIndex, mBodyLengthSize, mHeaderLength,isOpenCheck,null);
 	}
 
-	public CommonReaderProtocol(int mDelimiter, int mBodyLengthIndex, int mBodyLengthSize, int mHeaderLength, IByteEscape mIByteEscape) {
+	public CommonReaderProtocol(int mResolveType,int mDelimiter, int mBodyLengthIndex, int mBodyLengthSize, int mHeaderLength,boolean isOpenCheck,IByteEscape mIByteEscape) {
+		this.mResolveType = mResolveType;
 		this.mDelimiter = mDelimiter;
 		this.mBodyLengthIndex = mBodyLengthIndex;
 		this.mBodyLengthSize = mBodyLengthSize;
 		this.mHeaderLength = mHeaderLength;
+		this.isOpenCheck = isOpenCheck;
 		this.mIByteEscape = mIByteEscape;
 	}
 
@@ -63,8 +68,15 @@ public class CommonReaderProtocol implements IReaderProtocol {
 		return mDelimiter;
 	}
 
+	public int getmResovleType() {
+		return mResolveType;
+	}
 
-    public int getBodyLengthIndex(){
+	public boolean isOpenCheck() {
+		return isOpenCheck;
+	}
+
+	public int getBodyLengthIndex(){
 		return mBodyLengthSize;
 	}
 
