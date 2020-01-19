@@ -3,11 +3,13 @@ package com.sziti.easysocketlib.client;
 import com.sziti.easysocketlib.SLog;
 import com.sziti.easysocketlib.base.AbsLoopThread;
 import com.sziti.easysocketlib.client.pojo.BaseSendData;
+import com.sziti.easysocketlib.client.pojo.OriginalData;
 import com.sziti.easysocketlib.interfaces.connection.IConnectionManager;
 import com.sziti.easysocketlib.interfaces.io.IStateSender;
 import com.sziti.easysocketlib.interfaces.send.IResend;
 import com.sziti.easysocketlib.util.HexStringUtils;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -16,7 +18,7 @@ import java.util.List;
  * 补发控制器
  * Create by LiTtleBayReal
  */
-public class ResendManager implements IResend<BaseSendData> {
+public class ResendManager implements IResend<Serializable> {
 	/**
 	 * 数据包发送器
 	 */
@@ -50,15 +52,16 @@ public class ResendManager implements IResend<BaseSendData> {
 	}
 
 	@Override
-	public void add(BaseSendData data) {
+	public void add(Serializable data) {
+		BaseSendData d = (BaseSendData) data;
 		synchronized (this) {
-			if (!mResendList.contains(data))
-				mResendList.add(data);
+			if (!mResendList.contains(d))
+				mResendList.add(d);
 		}
 	}
 
 	@Override
-	public void remove(BaseSendData data) {
+	public void remove(Serializable data) {
 		synchronized (this) {
 			int size = mResendList.size();
 			for (int k = 0; k < size; k++) {
