@@ -23,7 +23,7 @@ public class ResendReaderImpl extends AbsReader {
 		//获取数据协议
 		CommonReaderProtocol commonReaderProtocol = (CommonReaderProtocol) mOkOptions.getReaderProtocol();
 		try {
-			if (commonReaderProtocol.getmResovleType() == CommonReaderProtocol.PROTOCOL_RESOLUTION_BY_PACKAGE_LENGTH) {
+			if (commonReaderProtocol.getmResolveType() == CommonReaderProtocol.PROTOCOL_RESOLUTION_BY_PACKAGE_LENGTH) {
 				OriginalData originalData = new OriginalData();
 				//获取数据协议
 				int headerLength = commonReaderProtocol.getHeaderLength();
@@ -91,7 +91,7 @@ public class ResendReaderImpl extends AbsReader {
 				} else {
 					mRemainingBuf = null;
 				}
-			} else if (commonReaderProtocol.getmResovleType() == CommonReaderProtocol.PROTOCOL_RESOLUTION_BY_DELIMITER) {
+			} else if (commonReaderProtocol.getmResolveType()  == CommonReaderProtocol.PROTOCOL_RESOLUTION_BY_DELIMITER) {
 
 			}
 		} catch (Exception e) {

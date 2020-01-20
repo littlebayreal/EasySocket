@@ -76,7 +76,7 @@ public class CommonReaderProtocol implements IReaderProtocol {
 		return mDelimiter;
 	}
 
-	public int getmResovleType() {
+	public int getmResolveType() {
 		return mResolveType;
 	}
 
