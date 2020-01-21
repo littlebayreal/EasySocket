@@ -13,8 +13,8 @@ public class CommonReaderProtocol implements IReaderProtocol {
 	/**
 	 * 解析方式 分为两种 通过分隔符解析以及通过整包长度解析
 	 */
-	public static final int PROTOCOL_RESOLUTION_BY_DELIMITER = 0x0001;
-	public static final int PROTOCOL_RESOLUTION_BY_PACKAGE_LENGTH = 0x0002;
+	public static final int PROTOCOL_RESOLUTION_BY_DELIMITER = 0x0001;//通过首尾分隔符截取报文才会有转义操作
+	public static final int PROTOCOL_RESOLUTION_BY_PACKAGE_LENGTH = 0x0002;//通过长度截取报文不会有转义操作
 
 	private int mResolveType;
 	/**
@@ -91,6 +91,15 @@ public class CommonReaderProtocol implements IReaderProtocol {
 	public int getBodylengthSize(){
 		return mBodyLengthSize;
 	}
+
+	public boolean isDelimiter() {
+		return isDelimiter;
+	}
+
+	public IByteEscape getmIByteEscape() {
+		return mIByteEscape;
+	}
+
 	@Override
 	public int getBodyLength(byte[] header, ByteOrder byteOrder) {
 		//do nothing

@@ -4,9 +4,10 @@ import com.sziti.easysocketlib.base.ConnectionInfo;
 import com.sziti.easysocketlib.client.delegate.action.AbsSocketResendHandler;
 import com.sziti.easysocketlib.client.pojo.BaseSendData;
 import com.sziti.easysocketlib.client.pojo.OriginalData;
+import com.sziti.easysocketlib.util.BitOperator;
 
 /**
- * 对补发事件的默认逻辑处理 作为用户可继承DefaultResendActionHandler重写处理方式
+ * 对补发事件的默认逻辑处理 作为用户可继承AbsSocketResendHandler重写处理方式
  * create by LiTtleBayReal
  */
 public class DefaultResendActionHandler extends AbsSocketResendHandler {
@@ -31,8 +32,10 @@ public class DefaultResendActionHandler extends AbsSocketResendHandler {
     //可做补发数据的移除操作
 	@Override
 	public void onSocketReadResponse(ConnectionInfo info, String action, OriginalData data) {
-//		super.onSocketReadResponse(info, action, data);
-		//根据协议号和流水号进行已发送数据的补发移除
-		iResend.remove(data);
+		//根据设置的条件进行已发送数据的补发移除
+        byte[] item_package = BitOperator.concatAll(data.getHeadBytes(),data.getBodyBytes());
+        byte[] flow_id = BitOperator.splitBytes(item_package,11, 12);
+        //根据第11个字节开始的流水号进行移除条件判断
+		iResend.remove(new int[]{11},new byte[][]{flow_id});
 	}
 }

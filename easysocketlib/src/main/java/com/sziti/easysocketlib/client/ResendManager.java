@@ -20,7 +20,7 @@ import java.util.List;
  * 补发控制器
  * Create by LiTtleBayReal
  */
-public class ResendManager implements IResend<Serializable> {
+public class ResendManager implements IResend<BaseSendData> {
     /**
      * 数据包发送器
      */
@@ -54,7 +54,7 @@ public class ResendManager implements IResend<Serializable> {
     }
 
     @Override
-    public void add(Serializable data) {
+    public void add(BaseSendData data) {
         BaseSendData d = (BaseSendData) data;
         synchronized (this) {
             if (!mResendList.contains(d))

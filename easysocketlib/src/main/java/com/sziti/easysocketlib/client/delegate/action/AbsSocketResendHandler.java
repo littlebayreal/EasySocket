@@ -34,11 +34,8 @@ public abstract class AbsSocketResendHandler extends SocketActionAdapter impleme
 		if (iResend != null)
 			iResend.add(iSendable);
 	}
+//    public abstract void removeForResend();
 
-	//	public void removeForResend(ISendable iSendable){
-//		if (iResend != null)
-//			iResend.remove(iSendable);
-//	}
 	public void dead() {
 		if (iResend != null)
 			iResend.dead();
