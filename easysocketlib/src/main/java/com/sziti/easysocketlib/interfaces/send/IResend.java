@@ -1,7 +1,5 @@
 package com.sziti.easysocketlib.interfaces.send;
 
-import com.sziti.easysocketlib.client.pojo.CheckRules;
-
 public interface IResend<BaseSendData> {
 	//添加需要补传的数据
 	void add(BaseSendData data);

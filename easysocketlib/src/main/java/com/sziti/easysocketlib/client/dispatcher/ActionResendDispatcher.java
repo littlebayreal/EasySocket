@@ -86,8 +86,8 @@ public class ActionResendDispatcher extends ActionDispatcher{
 			case ACTION_RESEND_REQUEST://需要重发的报文
 				try {
 					BaseSendData sendable = (BaseSendData) arg;
-					AbsSocketResendHandler resendAcitonAdapter = (AbsSocketResendHandler) responseHandler;
-					resendAcitonAdapter.onSocketWriteFailed( action, sendable);
+					AbsSocketResendHandler resendActionAdapter = (AbsSocketResendHandler) responseHandler;
+					resendActionAdapter.onSocketWriteFailed(action, sendable);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}

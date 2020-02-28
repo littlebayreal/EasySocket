@@ -1,9 +1,14 @@
 package com.sziti.easysocketlib.base;
 
+import com.sziti.easysocketlib.SLog;
 import com.sziti.easysocketlib.client.delegate.connection.AbsConnectionManager;
+import com.sziti.easysocketlib.client.delegate.connection.AutoResendConnectionManagerImpl;
 import com.sziti.easysocketlib.client.delegate.connection.ConnectionManagerImpl;
 import com.sziti.easysocketlib.interfaces.connection.IConnectionManager;
 import com.sziti.easysocketlib.interfaces.connection.IConnectionSwitchListener;
+import com.sziti.easysocketlib.server.interfaces.IServerManager;
+import com.sziti.easysocketlib.server.interfaces.IServerManagerPrivate;
+import com.sziti.easysocketlib.util.SPIUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,7 +24,7 @@ public class ManagerHolder {
 	//所有的客户端对象
     private volatile Map<ConnectionInfo, IConnectionManager> mConnectionManagerMap = new HashMap<>();
     //所有的服务器对象
-//    private volatile Map<Integer, IServerManagerPrivate> mServerManagerMap = new HashMap<>();
+    private volatile Map<Integer, IServerManagerPrivate> mServerManagerMap = new HashMap<>();
 
     private static class InstanceHolder {
         private static final ManagerHolder INSTANCE = new ManagerHolder();
@@ -33,35 +38,41 @@ public class ManagerHolder {
         mConnectionManagerMap.clear();
     }
 
-//    public IServerManager getServer(int localPort) {
-//        IServerManagerPrivate manager = mServerManagerMap.get(localPort);
-//        if (manager == null) {
-//            manager = (IServerManagerPrivate) SPIUtils.load(IServerManager.class);
-//            if (manager == null) {
-//                String err = "Oksocket.Server() load error. Server plug-in are required!" +
-//                        " For details link to https://github.com/xuuhaoo/OkSocket";
-//                SLog.e(err);
-//                throw new IllegalStateException(err);
-//            } else {
-//                synchronized (mServerManagerMap) {
-//                    mServerManagerMap.put(localPort, manager);
-//                }
-//                manager.initServerPrivate(localPort);
-//                return manager;
-//            }
-//        }
-//        return manager;
-//    }
+	/**
+	 * 获取一个server管理类
+	 * @param localPort
+	 * @return
+	 */
+	public IServerManager getServer(int localPort) {
+        IServerManagerPrivate manager = mServerManagerMap.get(localPort);
+        if (manager == null) {
+            manager = (IServerManagerPrivate) SPIUtils.load(IServerManager.class);
+            if (manager == null) {
+                String err = "Oksocket.Server() load error. Server plug-in are required!" +
+                        " For details link to https://github.com/xuuhaoo/OkSocket";
+                SLog.e(err);
+                throw new IllegalStateException(err);
+            } else {
+                synchronized (mServerManagerMap) {
+                    mServerManagerMap.put(localPort, manager);
+                }
+                manager.initServerPrivate(localPort);
+                return manager;
+            }
+        }
+        return manager;
+    }
 
     public IConnectionManager getConnection(ConnectionInfo info) {
+		//通过连接信息寻找连接通道
         IConnectionManager manager = mConnectionManagerMap.get(info);
+        //如果为空 通过默认配置生成 如果不为空 通过获取的配置得到连接通道
         if (manager == null) {
             return getConnection(info, EasySocketOptions.getDefault());
         } else {
             return getConnection(info, manager.getOption());
         }
     }
-
 	/**
 	 * 构造IConnectionManager 获取连接
 	 * @param info
@@ -84,7 +95,6 @@ public class ManagerHolder {
             return createNewManagerAndCache(info, okOptions);
         }
     }
-
 	/**
 	 * 创建新的IConnectionManager
 	 * @param info
@@ -92,7 +102,12 @@ public class ManagerHolder {
 	 * @return
 	 */
     private IConnectionManager createNewManagerAndCache(ConnectionInfo info, EasySocketOptions okOptions) {
-        AbsConnectionManager manager = new ConnectionManagerImpl(info);
+		AbsConnectionManager manager = null;
+		if (okOptions.isResendMode())
+    		manager = new AutoResendConnectionManagerImpl(info);
+		else
+			manager = new ConnectionManagerImpl(info);
+
         manager.option(okOptions);
         manager.setOnConnectionSwitchListener(new IConnectionSwitchListener() {
             @Override

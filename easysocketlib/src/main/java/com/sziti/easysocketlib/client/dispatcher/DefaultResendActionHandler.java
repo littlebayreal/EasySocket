@@ -1,5 +1,6 @@
 package com.sziti.easysocketlib.client.dispatcher;
 
+import com.sziti.easysocketlib.SLog;
 import com.sziti.easysocketlib.base.ConnectionInfo;
 import com.sziti.easysocketlib.client.delegate.action.AbsSocketResendHandler;
 import com.sziti.easysocketlib.client.pojo.BaseSendData;
@@ -18,6 +19,7 @@ public class DefaultResendActionHandler extends AbsSocketResendHandler {
     //当重新连接成功，可以继续补发线程的运行
 	@Override
 	public void onSocketConnectionSuccess(ConnectionInfo info, String action) {
+		SLog.e("IResend对象:"+ iResend.toString());
 		//开始补发操作
        iResend.startEngine();
 	}

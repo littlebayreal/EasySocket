@@ -1,9 +1,12 @@
 package com.sziti.easysocketlib.client.delegate.io;
 
+import android.app.slice.Slice;
+
 import com.sziti.easysocketlib.SLog;
 import com.sziti.easysocketlib.client.pojo.OriginalData;
 import com.sziti.easysocketlib.exceptions.ReadException;
 import com.sziti.easysocketlib.interfaces.action.IOAction;
+import com.sziti.easysocketlib.interfaces.io.IIOCoreOptions;
 import com.sziti.easysocketlib.protocol.CommonReaderProtocol;
 import com.sziti.easysocketlib.util.BitOperator;
 import com.sziti.easysocketlib.util.HexStringUtils;
@@ -17,9 +20,17 @@ public class ResendReaderImpl extends AbsReader {
 	private ByteBuffer mRemainingBuf;
 	//针对首尾分隔符处理进行的数据缓存队列
 	private ArrayList<Byte> byteList = new ArrayList();
-	private byte[] buffer = new byte[mOkOptions.getMaxReadDataMB()];
+	private byte[] buffer;
 	private int mRemainingLength;
-
+	@Override
+	public void setOption(IIOCoreOptions option) {
+		super.setOption(option);
+		SLog.i("getMaxReadDataMB:"+ option.getMaxReadDataMB());
+		buffer = new byte[option.getMaxReadDataMB()*1024*1024];
+	}
+    public ResendReaderImpl(String threadName){
+		super(threadName);
+	}
 	@Override
 	public void read() throws RuntimeException {
 		//获取数据协议
@@ -36,11 +47,13 @@ public class ResendReaderImpl extends AbsReader {
 				if (mRemainingBuf != null) {
 					int delimiter = commonReaderProtocol.getDelimiter();
 					mRemainingBuf.flip();
-
+					SLog.w(mThreadName +"mRemainingBuf array:"+ HexStringUtils.toHexString(mRemainingBuf.array()));
 					int length = 0;
 					//有开启分隔符 要先找分隔符索引
 					if (commonReaderProtocol.isDelimiter()) {
+						SLog.w(mThreadName +"mRemainingBuf size:"+ mRemainingBuf.remaining());
 						int start = findDelimiterIndex(mRemainingBuf.array(), delimiter);
+						SLog.w(mThreadName +"找到的7E位置:"+ start);
 						if (start <= -1) {
 							//没找到正确的分隔符，记录全部清除
 							mRemainingBuf = null;
@@ -48,18 +61,19 @@ public class ResendReaderImpl extends AbsReader {
 						}
 						//比较缓存区剩余字节和头协议长度最小
 						length = Math.min(mRemainingBuf.remaining() - start, headerLength);
-						headBuf.put(mRemainingBuf.array(), start, mRemainingBuf.remaining() - start);
+						headBuf.put(mRemainingBuf.array(), start, length);
 					} else {
 						length = Math.min(mRemainingBuf.remaining(), headerLength);
 						headBuf.put(mRemainingBuf.array(), 0, length);
 					}
-					//如果剩余字节小于头字节长度定义
+					//如果剩余字节小于头字节长度定义 需要继续读取数据
 					if (length < headerLength) {
 						//there are no data left
 						mRemainingBuf = null;
 						//从通道读取剩余的字节
 						readHeaderFromChannel(headBuf, headerLength - length, false, 0);
 					} else {
+						//标记到已解析的位置
 						mRemainingBuf.position(headerLength);
 					}
 				} else {
@@ -67,12 +81,11 @@ public class ResendReaderImpl extends AbsReader {
 				}
 				//头部解析成功后 才可以解析body
 				headBuf.flip();
+				SLog.i(mThreadName+"头部长度:"+ headBuf.remaining());
 				if (headBuf.remaining() == commonReaderProtocol.getHeaderLength()) {
 					originalData.setHeadBytes(headBuf.array());
-					int bodyLenIndex = commonReaderProtocol.getBodyLengthIndex();
-					int bodyLenSize = commonReaderProtocol.getBodylengthSize();
-					ByteBuffer bodyLen = headBuf.get(headBuf.array(), bodyLenIndex, bodyLenSize);
-					int bodyLength = BitOperator.byteToInteger(bodyLen.array());
+
+					int bodyLength = commonReaderProtocol.getBodyLength(headBuf.array(),mOkOptions.getReadByteOrder());
 					//整个包就分为头和身体两部分
 					int packageLength = commonReaderProtocol.getHeaderLength() + bodyLength;
 					if (SLog.isDebug()) {
@@ -84,7 +97,7 @@ public class ResendReaderImpl extends AbsReader {
 					}
 					if (bodyLength > 0) {
 						//计算出来的报文不可超过单条协议最大限制
-						if (packageLength > mOkOptions.getMaxReadDataMB()) {
+						if (packageLength > mOkOptions.getMaxReadDataMB()*1024*1024) {
 							throw new ReadException("Need to follow the transmission protocol.\r\n" +
 								"Please check the client/server code.\r\n" +
 								"According to the packet header data in the transport protocol, the package length is " + bodyLength + " Bytes.\r\n" +
@@ -95,21 +108,20 @@ public class ResendReaderImpl extends AbsReader {
 
 						if (mRemainingBuf != null) {
 							int bodyStartPosition = mRemainingBuf.position();
+							SLog.i(mThreadName+"bodyStartPosition:"+ bodyStartPosition);
 							int length = Math.min(mRemainingBuf.remaining(), bodyLength);
 							byteBuffer.put(mRemainingBuf.array(), bodyStartPosition, length);
 							mRemainingBuf.position(bodyStartPosition + length);
+							//如果报文长度满足后  还有剩余字节
 							if (length == bodyLength) {
-								if (mRemainingBuf.remaining() > 0) {//there are data left
+								if (mRemainingBuf.remaining() > 0) {//there are data left 将剩下的数据保存
 									ByteBuffer temp = ByteBuffer.allocate(mRemainingBuf.remaining());
 									temp.order(mOkOptions.getReadByteOrder());
 									temp.put(mRemainingBuf.array(), mRemainingBuf.position(), mRemainingBuf.remaining());
 									mRemainingBuf = temp;
-								} else {//there are no data left
+								} else {//there are no data left  无数据清空
 									mRemainingBuf = null;
 								}
-								//读取body
-								readBodyFromChannel(byteBuffer);
-								originalData.setBodyBytes(byteBuffer.array());
 								//拿到body内容  并且将解析好的报文对象回传
 								//cause this time data from remaining buffer not from channel.
 								originalData.setBodyBytes(byteBuffer.array());
@@ -118,11 +130,57 @@ public class ResendReaderImpl extends AbsReader {
 							} else {//there are no data left in buffer and some data pieces in channel
 								mRemainingBuf = null;
 							}
+//							//缓存区剩下的字节不够了
+//							if (length < bodyLength){
+//								//读取body
+//								readBodyFromChannel(byteBuffer);
+//
+//							} else{
+//								//解析后的内容从缓存区移除
+//								ByteBuffer temp = ByteBuffer.allocate(mRemainingBuf.remaining());
+//								temp.order(mOkOptions.getReadByteOrder());
+//								temp.put(mRemainingBuf.array(), mRemainingBuf.position(), mRemainingBuf.remaining());
+//								SLog.i(mThreadName+"temp:"+ HexStringUtils.toHexString(temp.array()));
+//								mRemainingBuf = temp;
+//							}
+//						}else{
+//							//没有缓存记录  直接读取body
+//							readBodyFromChannel(byteBuffer);
 						}
+						//读取body
+						readBodyFromChannel(byteBuffer);
+						//拿到body内容  并且将解析好的报文对象回传
+						//cause this time data from remaining buffer not from channel.
+						originalData.setBodyBytes(byteBuffer.array());
+//						mStateSender.sendBroadcast(IOAction.ACTION_READ_COMPLETE, originalData);
+
+						//解析后的内容从缓存区移除
+//						ByteBuffer temp = ByteBuffer.allocate(mRemainingBuf.remaining());
+//						temp.order(mOkOptions.getReadByteOrder());
+//						temp.put(mRemainingBuf.array(), mRemainingBuf.position(), mRemainingBuf.remaining());
+//						SLog.i(mThreadName+"temp:"+ HexStringUtils.toHexString(temp.array()));
+//						mRemainingBuf = temp;
+//						return;
+					}else if (bodyLength == 0){
+						originalData.setBodyBytes(new byte[0]);
+						if (mRemainingBuf != null) {
+							//the body is empty so header remaining buf need set null
+							if (mRemainingBuf.hasRemaining()) {
+								ByteBuffer temp = ByteBuffer.allocate(mRemainingBuf.remaining());
+								temp.order(mOkOptions.getReadByteOrder());
+								temp.put(mRemainingBuf.array(), mRemainingBuf.position(), mRemainingBuf.remaining());
+								mRemainingBuf = temp;
+							} else {
+								mRemainingBuf = null;
+							}
+						}
+					}else if (bodyLength < 0){
+						throw new ReadException(
+							"read body is wrong,this socket input stream is end of file read " + bodyLength + " ,that mean this socket is disconnected by server");
 					}
-				} else {
-					mRemainingBuf = null;
 				}
+				SLog.i(mThreadName+"解析成功:"+ originalData.toString());
+				mStateSender.sendBroadcast(IOAction.ACTION_READ_COMPLETE, originalData);
 			} else if (commonReaderProtocol.getmResolveType() == CommonReaderProtocol.PROTOCOL_RESOLUTION_BY_DELIMITER) {
 				if (!commonReaderProtocol.isDelimiter() || commonReaderProtocol.getDelimiter() == -1)
 					throw new RuntimeException("use read by delimiter，please set delimiter and open setting first");
@@ -197,7 +255,7 @@ public class ResendReaderImpl extends AbsReader {
 						//收到服务器过来的消息，就发送回调
 						OriginalData originalData = new OriginalData();
 						originalData.setHeadBytes(BitOperator.splitBytes(byte_item,0,commonReaderProtocol.getHeaderLength() - 1));
-						originalData.setBodyBytes(BitOperator.splitBytes(byte_item,commonReaderProtocol.getHeaderLength(),byte_item.length));
+						originalData.setBodyBytes(BitOperator.splitBytes(byte_item,commonReaderProtocol.getHeaderLength(),byte_item.length - 1));
 						mStateSender.sendBroadcast(IOAction.ACTION_READ_COMPLETE, originalData);
 						SLog.i("ResendReaderImpl------bytelistsize:" + byteList.size() + "byte_temp:" + byte_temp.length + "currentLength:" + mRemainingLength);
 						SLog.i("ResendReaderImpl------一轮解析完成");
@@ -205,6 +263,7 @@ public class ResendReaderImpl extends AbsReader {
 				}
 			}
 		} catch (Exception e) {
+			SLog.e("读取报错:"+ e.getMessage());
 			ReadException readException = new ReadException(e);
 			throw readException;
 		}
@@ -218,11 +277,14 @@ public class ResendReaderImpl extends AbsReader {
 	 */
 	private void readPackageFromChannel() throws IOException {
 		int len = mInputStream.available();
-		mInputStream.read(buffer, 0, len);
-		mRemainingLength += len;
-		//每次buffer缓存区读取的内容放到解析缓存区中
-		for (int k = 0; k < len; k++) {
-			byteList.add(buffer[k]);
+		if (len > 0) {
+			SLog.i(mThreadName+"readPackageFromChannel():"+ len);
+			mInputStream.read(buffer, 0, len);
+			mRemainingLength += len;
+			//每次buffer缓存区读取的内容放到解析缓存区中
+			for (int k = 0; k < len; k++) {
+				byteList.add(buffer[k]);
+			}
 		}
 	}
 
@@ -232,6 +294,8 @@ public class ResendReaderImpl extends AbsReader {
 			try {
 				byte[] bufArray = new byte[mOkOptions.getReadPackageBytes()];
 				int len = mInputStream.read(bufArray);
+				SLog.i(mThreadName + "readBodyFromChannel:" + len);
+				SLog.i(mThreadName + "readBodyFromChannel:" + HexStringUtils.toHexString(bufArray));
 				if (len == -1) {
 					break;
 				}
@@ -264,12 +328,15 @@ public class ResendReaderImpl extends AbsReader {
 		byte[] bytes = new byte[readLength];
 		while (size < readLength) {
 			int len = mInputStream.available();
-			int value = mInputStream.read(bytes, size, len);
-			if (value == -1) {
-				throw new ReadException(
-					"read head is wrong, this socket input stream is end of file read " + value + " ,that mean this socket is disconnected by server");
+			if (len > 0) {
+				SLog.w(mThreadName + "一直在循环"+ mInputStream.available());
+				int value = mInputStream.read(bytes, size, readLength - size);
+				if (value == -1) {
+					throw new ReadException(
+						"read head is wrong, this socket input stream is end of file read " + value + " ,that mean this socket is disconnected by server");
+				}
+				size += len;
 			}
-			size += len;
 		}
 		if (!isDelimiter) {
 			headBuf.put(bytes);

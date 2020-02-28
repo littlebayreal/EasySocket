@@ -1,5 +1,6 @@
 package com.sziti.easysocketlib.client.pojo;
 
+import com.sziti.easysocketlib.client.delegate.io.AbsSendable;
 import com.sziti.easysocketlib.config.APIConfig;
 import com.sziti.easysocketlib.interfaces.protocol.IHeaderProtocol;
 import com.sziti.easysocketlib.interfaces.send.ISendable;
@@ -8,7 +9,7 @@ import com.sziti.easysocketlib.util.BitOperator;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class BaseSendData implements ISendable {
+public abstract class BaseSendData extends AbsSendable {
 	//协议头
     private IHeaderProtocol mProtocolHeader;
 
@@ -22,10 +23,16 @@ public abstract class BaseSendData implements ISendable {
 	//向后台发送数据时需要自己手动拼装数据
 	public abstract byte[] generateBodyBytes();
 
+	public void setHeaderProtocol(IHeaderProtocol iHeaderProtocol){
+		this.mProtocolHeader = iHeaderProtocol;
+	}
 	@Override
 	public byte[] parse() {
+		if (mProtocolHeader == null)
+			throw new RuntimeException("IHeaderProtocol is Null");
 		byte[] bodybytes = generateBodyBytes();
 		mProtocolHeader.setBodyLength(bodybytes.length);
+		mProtocolHeader.setSerialNum(mSerialNum);
 		byte[] headbytes = mProtocolHeader.getHeaderBytes();
 		List<byte[]> listbytes = new ArrayList<>();
 		//添加消息头

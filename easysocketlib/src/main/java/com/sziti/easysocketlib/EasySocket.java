@@ -4,6 +4,9 @@ import com.sziti.easysocketlib.base.ConnectionInfo;
 import com.sziti.easysocketlib.base.ManagerHolder;
 import com.sziti.easysocketlib.base.EasySocketOptions;
 import com.sziti.easysocketlib.interfaces.connection.IConnectionManager;
+import com.sziti.easysocketlib.interfaces.dispatcher.IRegister;
+import com.sziti.easysocketlib.server.interfaces.IServerActionListener;
+import com.sziti.easysocketlib.server.interfaces.IServerManager;
 
 /**
  * EasySocket是一款轻量级的socket通讯框架
@@ -17,9 +20,9 @@ public class EasySocket {
 	 * @param serverPort
 	 * @return
 	 */
-//	public static IRegister<IServerActionListener, IServerManager> server(int serverPort) {
-//		return (IRegister<IServerActionListener, IServerManager>) holder.getServer(serverPort);
-//	}
+	public static IRegister<IServerActionListener, IServerManager> server(int serverPort) {
+		return (IRegister<IServerActionListener, IServerManager>) holder.getServer(serverPort);
+	}
 	/**
 	 * 开启一个socket通讯通道,参配为默认参配
 	 *

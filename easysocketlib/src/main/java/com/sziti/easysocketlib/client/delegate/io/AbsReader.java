@@ -20,9 +20,13 @@ public abstract class AbsReader implements IReader<IIOCoreOptions> {
 
     protected InputStream mInputStream;
 
+    protected String mThreadName;
+
     public AbsReader() {
     }
-
+    public AbsReader(String threadName){
+    	this.mThreadName = threadName;
+	}
     @Override
     public void initialize(InputStream inputStream, IStateSender stateSender) {
         mStateSender = stateSender;

@@ -76,6 +76,9 @@ public class Jt808ProtocolHeader implements IHeaderProtocol {
 			mJt808ProtocolHeader.setSubPackageSeq(subPackageSeq);
 			return this;
 		}
+		public Jt808ProtocolHeader build(){
+			return mJt808ProtocolHeader;
+		}
 	}
 
 	/**
@@ -184,6 +187,11 @@ public class Jt808ProtocolHeader implements IHeaderProtocol {
 	}
 
 	@Override
+	public void setSerialNum(int serialNum) {
+		setFlowId(serialNum);
+	}
+
+	@Override
 	public byte[] getHeaderBytes() {
 		List<byte[]> listbytes = new ArrayList<>();
 		// 消息ID
@@ -217,7 +225,7 @@ public class Jt808ProtocolHeader implements IHeaderProtocol {
 			// 消息总包数
 			listbytes.add(BitOperator.numToByteArray(this.getTotalSubPackage(), 2));
 			// 包序号
-			listbytes.add(BitOperator.numToByteArray(this.getTotalSubPackage(), 2));
+			listbytes.add(BitOperator.numToByteArray(this.getSubPackageSeq(), 2));
 		}
 
 		byte[] msghead = BitOperator.concatAll(listbytes);

@@ -22,7 +22,11 @@ public class EasySocketOptions implements IIOCoreOptions {
      * 框架是否是调试模式
      */
     private static boolean isDebug;
-    /**
+	/**
+	 * 是否是重发模式
+	 */
+	private boolean isResendMode;
+	/**
      * Socket通讯模式
      * <p>
      * 请注意:<br>
@@ -129,6 +133,15 @@ public class EasySocketOptions implements IIOCoreOptions {
             mOptions = okOptions;
         }
 
+		/**
+		 * 是否开启重发模式  在此模式下 会根据用户设置的条件重复发送直到服务端返回相应的应答用以移除重发
+		 * @param isResendMode
+		 * @return
+		 */
+		public Builder setIsResendMode(Boolean isResendMode) {
+			mOptions.isResendMode = isResendMode;
+			return this;
+		}
         /**
          * Socket通讯模式
          * <p>
@@ -328,7 +341,9 @@ public class EasySocketOptions implements IIOCoreOptions {
         }
     }
 
-    public IOThreadMode getIOThreadMode() {
+	public boolean isResendMode() { return isResendMode; }
+
+	public IOThreadMode getIOThreadMode() {
         return mIOThreadMode;
     }
 
@@ -412,6 +427,7 @@ public class EasySocketOptions implements IIOCoreOptions {
 
 	public static EasySocketOptions getDefault() {
         EasySocketOptions okOptions = new EasySocketOptions();
+        okOptions.isResendMode = false;
         okOptions.mPulseFrequency = 5 * 1000;
         okOptions.mIOThreadMode = IOThreadMode.DUPLEX;
         okOptions.mReaderProtocol = new DefaultNormalReaderProtocol();
@@ -428,7 +444,7 @@ public class EasySocketOptions implements IIOCoreOptions {
         okOptions.mOkSocketFactory = null;
         okOptions.isCallbackInIndependentThread = true;
         okOptions.mCallbackThreadModeToken = null;
-        okOptions.mSocketResendHandler = new DefaultResendActionHandler();
+//        okOptions.mSocketResendHandler = new DefaultResendActionHandler();
         return okOptions;
     }
 

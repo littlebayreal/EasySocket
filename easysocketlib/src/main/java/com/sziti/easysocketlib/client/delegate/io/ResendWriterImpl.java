@@ -1,6 +1,7 @@
 package com.sziti.easysocketlib.client.delegate.io;
 
 import com.sziti.easysocketlib.SLog;
+import com.sziti.easysocketlib.client.pojo.BaseSendData;
 import com.sziti.easysocketlib.exceptions.WriteException;
 import com.sziti.easysocketlib.interfaces.action.IOAction;
 import com.sziti.easysocketlib.interfaces.action.IOResendAction;
@@ -9,6 +10,9 @@ import com.sziti.easysocketlib.interfaces.io.IStateSender;
 import com.sziti.easysocketlib.interfaces.io.IWriter;
 import com.sziti.easysocketlib.interfaces.send.IPulseSendable;
 import com.sziti.easysocketlib.interfaces.send.ISendable;
+import com.sziti.easysocketlib.protocol.CommonReaderProtocol;
+import com.sziti.easysocketlib.util.BitOperator;
+import com.sziti.easysocketlib.util.HexStringUtils;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -27,7 +31,7 @@ public class ResendWriterImpl implements IWriter{
 
 	private OutputStream mOutputStream;
 	//发送的流水号
-	private int mSerialNum;
+//	private int mSerialNum;
 	private LinkedBlockingQueue<ISendable> mQueue = new LinkedBlockingQueue<>();
 	@Override
 	public void initialize(OutputStream outputStream, IStateSender stateSender) {
@@ -45,10 +49,14 @@ public class ResendWriterImpl implements IWriter{
 		}
 		if (sendable != null) {
 			try {
-//				//根据配置 设置报文流水号
-//				if (mOkOptions.getIsOpenSerialNum())
-//					sendable.setSerialNum(mSerialNum);
+				//根据配置 设置报文流水号
 				byte[] sendBytes = sendable.parse();
+				//发送之前 添加正确的流水号 作为移除时判断依据
+//				if (mOkOptions.getReaderProtocol() instanceof CommonReaderProtocol){
+//					SLog.i("修改流水号:"+ mSerialNum);
+//					((AbsSendable)sendable).setSerialNum(mSerialNum);
+//					sendBytes = sendable.parse();
+//				}
 				int packageSize = mOkOptions.getWritePackageBytes();
 				int remainingCount = sendBytes.length;
 				ByteBuffer writeBuf = ByteBuffer.allocate(packageSize);
@@ -67,7 +75,7 @@ public class ResendWriterImpl implements IWriter{
 
 					if (SLog.isDebug()) {
 						byte[] forLogBytes = Arrays.copyOfRange(sendBytes, index, index + realWriteLength);
-//                        SLog.i("write bytes: " + BytesUtils.toHexStringForLog(forLogBytes));
+                        SLog.i("write bytes: " + HexStringUtils.toHexString(forLogBytes));
 						SLog.i("bytes write length:" + realWriteLength);
 					}
 
@@ -80,6 +88,7 @@ public class ResendWriterImpl implements IWriter{
 					mStateSender.sendBroadcast(IOAction.ACTION_WRITE_COMPLETE, sendable);
 				}
 			} catch (Exception e) {
+				//网络异常需要补发消息
 				if (sendable != null)
 					mStateSender.sendBroadcast(IOResendAction.ACTION_RESEND_REQUEST,sendable);
 				WriteException writeException = new WriteException(e);
@@ -97,8 +106,8 @@ public class ResendWriterImpl implements IWriter{
 
 	@Override
 	public void offer(ISendable sendable) {
-		mSerialNum++;
-		if (mSerialNum > 0xffff)mSerialNum = 1;
+//		mSerialNum++;
+//		if (mSerialNum > 0xffff)mSerialNum = 1;
 		mQueue.offer(sendable);
 	}
 

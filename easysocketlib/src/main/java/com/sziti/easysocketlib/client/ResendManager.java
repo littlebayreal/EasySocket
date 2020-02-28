@@ -3,15 +3,12 @@ package com.sziti.easysocketlib.client;
 import com.sziti.easysocketlib.SLog;
 import com.sziti.easysocketlib.base.AbsLoopThread;
 import com.sziti.easysocketlib.client.pojo.BaseSendData;
-import com.sziti.easysocketlib.client.pojo.CheckRules;
-import com.sziti.easysocketlib.client.pojo.OriginalData;
 import com.sziti.easysocketlib.interfaces.connection.IConnectionManager;
 import com.sziti.easysocketlib.interfaces.io.IStateSender;
 import com.sziti.easysocketlib.interfaces.send.IResend;
 import com.sziti.easysocketlib.util.BitOperator;
 import com.sziti.easysocketlib.util.HexStringUtils;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -55,6 +52,7 @@ public class ResendManager implements IResend<BaseSendData> {
 
     @Override
     public void add(BaseSendData data) {
+    	SLog.i("ResendManager:"+ HexStringUtils.toHexString(data.parse()));
         BaseSendData d = (BaseSendData) data;
         synchronized (this) {
             if (!mResendList.contains(d))
@@ -79,9 +77,10 @@ public class ResendManager implements IResend<BaseSendData> {
                     int int_check = BitOperator.byteToInteger(check);
                     SLog.i("ResendManager.remove()------" + "MsgID:" + calc_check + "checkBytes:" + int_check);
                     if (int_check == calc_check) cur_check++;
+                    else break;
                 }
                 if (cur_check == indices.length) {
-                    SLog.i("ResendManager.remove()------通过应答将补发队列中的对应数据移除");
+                    SLog.i("ResendManager.remove()------通过应答将补发队列中的对应数据移除"+ k);
                     mResendList.remove(k);
                 }
             }
@@ -90,6 +89,7 @@ public class ResendManager implements IResend<BaseSendData> {
 
     @Override
     public void dead() {
+    	SLog.i("ResendManager:关闭补发功能");
         //作为一个补传的机制，防止过多的补传导致管道堵塞
         if (mResendList.size() > 999)
             mResendList.clear();
@@ -101,7 +101,10 @@ public class ResendManager implements IResend<BaseSendData> {
      * 开始重发的任务线程
      */
     public void startEngine() {
+		SLog.i("ResendManager:startEngine()");
         if (mResendThread == null) {
+        	isDead = false;
+			SLog.i("ResendManager:开启补发功能"+ mResendList.size());
             mResendThread = new ResendThread();
             //默认5秒执行一次重发线程 所以重发的间隔都是大于等于5秒并且以5的倍数增长
             mResendThread.setInterval(5000);
@@ -121,7 +124,8 @@ public class ResendManager implements IResend<BaseSendData> {
 
         @Override
         protected void runInLoopThread() throws Exception {
-            if (isDead) {
+			SLog.i("ResendThread------补发线程正在运行");
+			if (isDead) {
                 shutdown();
                 return;
             }
@@ -130,32 +134,32 @@ public class ResendManager implements IResend<BaseSendData> {
                     int size = mResendList.size();
                     for (int i = size - 1; i >= 0; i--) {
                         data = mResendList.get(i);
-                        //先发送 再移除
 
                         SLog.i("ResendThread------补发数据:" + HexStringUtils.toHexString(data.parse()));
                         //补发前处理 点位上传补发需要修改msgid
                         //补发后处理
                         if (!data.isReSend() || data.getSendTimes() <= 0) {
-                            SLog.i("ResendThread------移除补传");
+                            SLog.i("ResendThread------移除补传:"+ HexStringUtils.toHexString(data.parse()));
                             mResendList.remove(data);
                         }
-                        //进行消息的补传操作
-                        for (BaseSendData s : mResendList) {
-//						SLog.i( "ResendThread------补传消息第:" + s.getSendTimes() + "次发送" + s.getMsgHeader().getMsgId());
-                            if (!s.checkResend()) {
+                    }
+					SLog.i("ResendThread------补发数据数量:" + mResendList.size());
+					//进行消息的补传操作
+					for (BaseSendData s : mResendList) {
+						SLog.i( "ResendThread------补传消息第:" + s.getSendTimes() + "次发送" );
+						if (!s.checkResend()) {
 //							SLog.i( "ResendThread------补传消息时间验证失败" + s.getMsgHeader().getMsgId());
-                                continue;
-                            }
-                            //补传操作
-                            mManager.send(s);
-                            //设置本次补发的时间戳
-                            s.setSendStamp(System.currentTimeMillis());
-                            s.setSendTimes(s.getSendTimes() - 1);
+							continue;
+						}
+						//补传操作
+						mManager.send(s);
+						//设置本次补发的时间戳
+						s.setSendStamp(System.currentTimeMillis());
+						s.setSendTimes(s.getSendTimes() - 1);
 //							SLog.i("ResendThread------发送补传消息:" + s.getMsgHeader().getMsgId()
 //								+ ",FlowID:" + s.getMsgHeader().getFlowId());
 //						}
-                        }
-                    }
+					}
                 }
             }
         }

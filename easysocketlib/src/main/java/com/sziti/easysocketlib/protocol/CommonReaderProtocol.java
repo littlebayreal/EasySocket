@@ -1,7 +1,10 @@
 package com.sziti.easysocketlib.protocol;
 
+import com.sziti.easysocketlib.SLog;
 import com.sziti.easysocketlib.interfaces.protocol.IByteEscape;
 import com.sziti.easysocketlib.interfaces.protocol.IReaderProtocol;
+import com.sziti.easysocketlib.util.BitOperator;
+import com.sziti.easysocketlib.util.HexStringUtils;
 
 import java.nio.ByteOrder;
 
@@ -45,16 +48,14 @@ public class CommonReaderProtocol implements IReaderProtocol {
 	 * 是否开启分隔符
 	 */
 	private boolean isDelimiter;
-	public CommonReaderProtocol(int mResolveType,int mHeaderLength,boolean isDelimiter,int mDelimiter, int mBodyLengthIndex, int mBodyLengthSize,boolean isOpenCheck) {
-		this(mResolveType,isDelimiter,mDelimiter,mBodyLengthIndex, mBodyLengthSize, mHeaderLength,isOpenCheck,null);
+	public CommonReaderProtocol(int mResolveType,int mHeaderLength,boolean isDelimiter,int mDelimiter,boolean isOpenCheck) {
+		this(mResolveType,isDelimiter,mDelimiter, mHeaderLength,isOpenCheck,null);
 	}
 
-	public CommonReaderProtocol(int mResolveType,boolean isDelimiter,int mDelimiter, int mBodyLengthIndex, int mBodyLengthSize, int mHeaderLength,boolean isOpenCheck,IByteEscape mIByteEscape) {
+	public CommonReaderProtocol(int mResolveType,boolean isDelimiter,int mDelimiter,int mHeaderLength,boolean isOpenCheck,IByteEscape mIByteEscape) {
 		this.mResolveType = mResolveType;
 		this.isDelimiter = isDelimiter;
 		this.mDelimiter = mDelimiter;
-		this.mBodyLengthIndex = mBodyLengthIndex;
-		this.mBodyLengthSize = mBodyLengthSize;
 		this.mHeaderLength = mHeaderLength;
 		this.isOpenCheck = isOpenCheck;
 		this.mIByteEscape = mIByteEscape;
@@ -84,14 +85,6 @@ public class CommonReaderProtocol implements IReaderProtocol {
 		return isOpenCheck;
 	}
 
-	public int getBodyLengthIndex(){
-		return mBodyLengthSize;
-	}
-
-	public int getBodylengthSize(){
-		return mBodyLengthSize;
-	}
-
 	public boolean isDelimiter() {
 		return isDelimiter;
 	}
@@ -102,8 +95,10 @@ public class CommonReaderProtocol implements IReaderProtocol {
 
 	@Override
 	public int getBodyLength(byte[] header, ByteOrder byteOrder) {
-		//do nothing
-		return 0;
+		//通过头部解析的报文 解析报文的body长度
+		int msgProp = BitOperator.byteToInteger(BitOperator.splitBytes(header, 3, 4));
+		int msgLength = msgProp & 0x3ff;
+		return msgLength + 1 + 1;
 	}
 
 }

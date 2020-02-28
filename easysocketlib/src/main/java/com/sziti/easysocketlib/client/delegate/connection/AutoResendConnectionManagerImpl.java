@@ -1,8 +1,11 @@
 package com.sziti.easysocketlib.client.delegate.connection;
 
+import android.text.TextUtils;
+
 import com.sziti.easysocketlib.SLog;
 import com.sziti.easysocketlib.base.ConnectionInfo;
 import com.sziti.easysocketlib.base.EasySocketOptions;
+import com.sziti.easysocketlib.base.OkSocketSSLConfig;
 import com.sziti.easysocketlib.client.PulseManager;
 import com.sziti.easysocketlib.client.ResendManager;
 import com.sziti.easysocketlib.client.delegate.action.AbsSocketResendHandler;
@@ -20,6 +23,11 @@ import com.sziti.easysocketlib.iothreads.ResendIOThreadManager;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.security.SecureRandom;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
 
 /**
  * Create by LiTtleBayReal
@@ -151,6 +159,20 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 			mReconnectionManager = mOptions.getReconnectionManager();
 			mReconnectionManager.attach(this);
 		}
+
+		//初始化补发管理器以及补发事件监听处理器
+		if (mResendManager == null)
+			mResendManager = new ResendManager(this,mActionDispatcher);
+
+		if (mResendActionHandler != null){
+			mResendActionHandler.detach(this);
+			SLog.i("mResendActionHandler is detached.");
+		}
+		if (mOptions.getmSocketResendHandler() == null)
+			throw new RuntimeException("please set socketResendHandler first");
+		mResendActionHandler = mOptions.getmSocketResendHandler();
+		mResendActionHandler.attach(this,mResendManager,this);
+		SLog.i("mResendActionHandler is attached.");
 		return this;
 	}
 
@@ -212,6 +234,14 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 		@Override
 		public void run() {
 			try {
+				mSocket = getSocketByConfig();
+			} catch (Exception e) {
+				if (mOptions.isDebug()) {
+					e.printStackTrace();
+				}
+				throw new UnConnectException("Create socket failed.", e);
+			}
+			try {
 				if (mLocalConnectionInfo != null) {
 					SLog.i("try bind: " + mLocalConnectionInfo.getIp() + " port:" + mLocalConnectionInfo.getPort());
 					mSocket.bind(new InetSocketAddress(mLocalConnectionInfo.getIp(), mLocalConnectionInfo.getPort()));
@@ -243,17 +273,6 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 	private void resolveManager() throws IOException {
 		//初始化心跳管理器
 		mPulseManager = new PulseManager(this, mOptions);
-		//初始化补发管理器以及补发事件监听处理器
-		if (mResendManager == null)
-        mResendManager = new ResendManager(this,mActionDispatcher);
-
-		if (mResendActionHandler != null){
-			mResendActionHandler.detach(this);
-			SLog.i("mResendActionHandler is detached.");
-		}
-		mResendActionHandler = mOptions.getmSocketResendHandler();
-		mResendActionHandler.attach(this,mResendManager,this);
-		SLog.i("mResendActionHandler is attached.");
 
 		//初始化socket的读写进程
 		mManager = new ResendIOThreadManager(
@@ -275,8 +294,8 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 				mPulseManager.dead();
 				mPulseManager = null;
 			}
-
-			if (mResendManager != null){
+            //关闭补发功能
+			if (mResendActionHandler != null){
 				mResendActionHandler.dead();
 			}
 		}
@@ -366,6 +385,55 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 						mException.printStackTrace();
 					}
 				}
+			}
+		}
+	}
+	private synchronized Socket getSocketByConfig() throws Exception {
+		//自定义socket操作  暂时没用到
+		if (mOptions.getOkSocketFactory() != null) {
+			return mOptions.getOkSocketFactory().createSocket(mRemoteConnectionInfo, mOptions);
+		}
+
+		//默认操作
+		OkSocketSSLConfig config = mOptions.getSSLConfig();
+		if (config == null) {
+			return new Socket();
+		}
+
+		SSLSocketFactory factory = config.getCustomSSLFactory();
+		if (factory == null) {
+			String protocol = "SSL";
+			if (!TextUtils.isEmpty(config.getProtocol())) {
+				protocol = config.getProtocol();
+			}
+
+			TrustManager[] trustManagers = config.getTrustManagers();
+			if (trustManagers == null || trustManagers.length == 0) {
+				//缺省信任所有证书
+//                trustManagers = new TrustManager[]{new DefaultX509ProtocolTrustManager()};
+			}
+
+			try {
+				SSLContext sslContext = SSLContext.getInstance(protocol);
+				sslContext.init(config.getKeyManagers(), trustManagers, new SecureRandom());
+				return sslContext.getSocketFactory().createSocket();
+			} catch (Exception e) {
+				if (mOptions.isDebug()) {
+					e.printStackTrace();
+				}
+				SLog.e(e.getMessage());
+				return new Socket();
+			}
+
+		} else {
+			try {
+				return factory.createSocket();
+			} catch (IOException e) {
+				if (mOptions.isDebug()) {
+					e.printStackTrace();
+				}
+				SLog.e(e.getMessage());
+				return new Socket();
 			}
 		}
 	}

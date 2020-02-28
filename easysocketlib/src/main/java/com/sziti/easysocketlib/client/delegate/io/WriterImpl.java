@@ -8,6 +8,7 @@ import com.sziti.easysocketlib.interfaces.io.IStateSender;
 import com.sziti.easysocketlib.interfaces.io.IWriter;
 import com.sziti.easysocketlib.interfaces.send.IPulseSendable;
 import com.sziti.easysocketlib.interfaces.send.ISendable;
+import com.sziti.easysocketlib.util.HexStringUtils;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -42,7 +43,6 @@ public class WriterImpl implements IWriter<IIOCoreOptions> {
         } catch (InterruptedException e) {
             //ignore;
         }
-
         if (sendable != null) {
             try {
                 byte[] sendBytes = sendable.parse();
@@ -64,7 +64,7 @@ public class WriterImpl implements IWriter<IIOCoreOptions> {
 
                     if (SLog.isDebug()) {
                         byte[] forLogBytes = Arrays.copyOfRange(sendBytes, index, index + realWriteLength);
-//                        SLog.i("write bytes: " + BytesUtils.toHexStringForLog(forLogBytes));
+                        SLog.i("write bytes: " + HexStringUtils.toHexString(forLogBytes));
                         SLog.i("bytes write length:" + realWriteLength);
                     }
 

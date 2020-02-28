@@ -74,6 +74,7 @@ public class ReaderImpl extends AbsReader {
                     int length = Math.min(mRemainingBuf.remaining(), bodyLength);
                     byteBuffer.put(mRemainingBuf.array(), bodyStartPosition, length);
                     mRemainingBuf.position(bodyStartPosition + length);
+                    //如果剩余的字节刚好等于报文长度
                     if (length == bodyLength) {
                         if (mRemainingBuf.remaining() > 0) {//there are data left 将剩下的数据保存
                             ByteBuffer temp = ByteBuffer.allocate(mRemainingBuf.remaining());

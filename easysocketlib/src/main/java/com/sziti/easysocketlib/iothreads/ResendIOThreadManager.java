@@ -21,7 +21,7 @@ public class ResendIOThreadManager extends IOThreadManager{
 	public void initIO() {
 		//检测协议头是否正常
 		assertHeaderProtocolNotEmpty();
-		mReader = new ResendReaderImpl();
+		mReader = new ResendReaderImpl("client0");
 		mReader.initialize(mInputStream, mSender);
 		mWriter = new ResendWriterImpl();
 		mWriter.initialize(mOutputStream, mSender);

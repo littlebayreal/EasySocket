@@ -45,6 +45,7 @@ public class DefaultReconnectManager extends AbsReconnectionManager {
         resetThread();
     }
 
+    //连接失败后的逻辑处理
     @Override
     public void onSocketConnectionFailed(ConnectionInfo info, String action, Exception e) {
         if (e != null) {

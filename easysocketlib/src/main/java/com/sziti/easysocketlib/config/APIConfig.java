@@ -1,5 +1,7 @@
 package com.sziti.easysocketlib.config;
 
+import java.nio.charset.Charset;
+
 /**
  * Created by ZhangYanYan on 06/12/2019.
  * 所有通信协议配置
@@ -11,6 +13,7 @@ public interface APIConfig {
     int pkg_delimiter_end = 0x7F;
     //终端的唯一标识 用于让后台识别socket通道
     String terminal_id = "10512909090";
+	Charset string_charset = Charset.forName("GBK");
 	//终端上传通用标识
 	int msg_id_device_common_upload = 0x0900;
     // 标识位：上行（设备→网络中心）

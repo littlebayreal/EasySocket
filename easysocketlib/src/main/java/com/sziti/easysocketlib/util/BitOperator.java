@@ -2,6 +2,8 @@ package com.sziti.easysocketlib.util;
 
 import com.sziti.easysocketlib.SLog;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -441,4 +443,34 @@ public class BitOperator {
     public static boolean isAscii(int c) {
         return (c & 0x80) == 0x80 ? false : true;
     }
+	/**
+	 * 替换某一位置的byte数组
+	 */
+	public static byte[] replaceBytes(byte[] src,int position,byte[] des) throws IOException{
+		// 输出：34 5e 5d 5d 7d 73 5e 7d 7d 5e 5d 7d 
+		if (position < 0 || position > src.length)
+			throw new ArrayIndexOutOfBoundsException("replaceBytes error : index out of bounds(position=" + position
+				 + ",bytes length=" + src.length + ")");
+		ByteArrayOutputStream baos = null;
+		try {
+			baos = new ByteArrayOutputStream();
+			for (int i = 0; i < position; i++) {
+				baos.write(src[i]);
+			}
+			for (int i = 0; i < des.length; i++) {
+				baos.write(des[i]);
+			}
+			for (int i = position + des.length; i < src.length; i++) {
+				baos.write(src[i]);
+			}
+			return baos.toByteArray();
+		} catch (Exception e) {
+			throw e;
+		} finally {
+			if (baos != null) {
+				baos.close();
+				baos = null;
+			}
+		}
+	}
 }

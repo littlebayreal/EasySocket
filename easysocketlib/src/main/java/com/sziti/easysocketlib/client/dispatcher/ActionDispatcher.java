@@ -230,7 +230,6 @@ public class ActionDispatcher implements IRegister<ISocketActionListener, IConne
 		protected void beforeLoop() throws Exception {
 			super.beforeLoop();
 		}
-
 		@Override
         protected void runInLoopThread() throws Exception {
             ActionBean actionBean = ACTION_QUEUE.take();
@@ -262,7 +261,6 @@ public class ActionDispatcher implements IRegister<ISocketActionListener, IConne
             this.arg = arg;
             mDispatcher = dispatcher;
         }
-
         String mAction = "";
         Serializable arg;
         ActionDispatcher mDispatcher;

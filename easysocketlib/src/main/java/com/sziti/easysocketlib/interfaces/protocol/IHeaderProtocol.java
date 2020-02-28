@@ -6,6 +6,10 @@ public interface IHeaderProtocol {
 	 */
 	int setBodyLength(int bodyLength);
 	/**
+	 * 设置流水号
+	 */
+	void setSerialNum(int serialNum);
+	/**
 	 * 组装生成头字节
 	 * @return
 	 */
