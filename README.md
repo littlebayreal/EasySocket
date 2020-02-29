@@ -13,8 +13,15 @@ EasySocket保留了OkSocket的所有功能，并且根据我在实际应用开�
 引入EasySocket
 
 ```groovy
-由于网络问题，稍后我会发布lib到jcenter仓库
-大家可以先下载lib，作为工程引入。
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+	implementation 'com.github.littlebayreal:EasySocket:0.0.1'
+}
 ```
 
 
