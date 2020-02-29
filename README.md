@@ -9,18 +9,12 @@ EasySocket保留了OkSocket的所有功能，并且根据我在实际应用开�
   #### 4.实用的字节处理工具</br>
   
 ### 如何使用
-#### 首先添加jcenter仓库
-```groovy
-allprojects {
-    repositories {
-        jcenter()
-    }
-}
-```
+
 引入EasySocket
 
-```
---------------------------
+```groovy
+由于网络问题，稍后我会发布lib到jcenter仓库
+大家可以先下载lib，作为工程引入。
 ```
 
 
