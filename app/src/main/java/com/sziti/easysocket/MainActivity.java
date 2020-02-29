@@ -27,6 +27,7 @@ import android.widget.Toast;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.sziti.easysocket.data.MsgDataBean;
+import com.sziti.easysocket.data.PulseBean;
 import com.sziti.easysocket.data.Register;
 import com.sziti.easysocket.data.TextData;
 import com.sziti.easysocketlib.EasySocket;
@@ -78,6 +79,7 @@ public class MainActivity extends AppCompatActivity implements IClientIOCallback
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity);
 		mSimpleBtn = findViewById(R.id.btn1);
+		mComplexBtn = findViewById(R.id.btn2);
 		mServerBtn = findViewById(R.id.btn3);
 		mIPTv = findViewById(R.id.ip);
 
@@ -89,6 +91,13 @@ public class MainActivity extends AppCompatActivity implements IClientIOCallback
 			@Override
 			public void onClick(View v) {
 				Intent intent = new Intent(MainActivity.this, SimpleDemoActivity.class);
+				startActivity(intent);
+			}
+		});
+		mComplexBtn.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View view) {
+				Intent intent = new Intent(MainActivity.this, ComplexDemoActivity.class);
 				startActivity(intent);
 			}
 		});
@@ -248,6 +257,20 @@ public class MainActivity extends AppCompatActivity implements IClientIOCallback
 				textData.setSerialNum(BitOperator.byteToInteger(BitOperator.splitBytes(originalData.getHeadBytes(),
 					11,12)));
 				client.send(textData);
+				break;
+			case 0x0300:
+				byte[] msg0 = BitOperator.splitBytes(originalData.getBodyBytes(),0,originalData.getBodyBytes().length - 3);
+				Log.i("onClientIOServer", Thread.currentThread().getName() + " 接收到:" + client.getHostIp() + " 文字信息:" + new String(msg0,APIConfig.string_charset));
+
+				//发送内容报文
+				PulseBean pulseBean = new PulseBean();
+				IHeaderProtocol ih0 = new Jt808ProtocolHeader.Builder()
+					.setMsgId(0x0300)
+					.setTerminalPhone("15850101933").build();
+				pulseBean.setHeaderProtocol(ih0);
+				pulseBean.setSerialNum(BitOperator.byteToInteger(BitOperator.splitBytes(originalData.getHeadBytes(),
+					11,12)));
+				client.send(pulseBean);
 				break;
 		}
 //		String str = new String(originalData.getBodyBytes(), Charset.forName("utf-8"));

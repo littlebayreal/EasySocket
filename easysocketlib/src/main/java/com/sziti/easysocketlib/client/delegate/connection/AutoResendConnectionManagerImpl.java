@@ -11,7 +11,6 @@ import com.sziti.easysocketlib.client.ResendManager;
 import com.sziti.easysocketlib.client.delegate.action.AbsSocketResendHandler;
 import com.sziti.easysocketlib.client.dispatcher.ActionHandler;
 import com.sziti.easysocketlib.client.dispatcher.ActionResendDispatcher;
-import com.sziti.easysocketlib.client.dispatcher.DefaultResendActionHandler;
 import com.sziti.easysocketlib.exceptions.ManuallyDisconnectException;
 import com.sziti.easysocketlib.exceptions.UnConnectException;
 import com.sziti.easysocketlib.interfaces.action.IAction;
@@ -299,7 +298,7 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 				mResendActionHandler.dead();
 			}
 		}
-
+        //正常断开 需要解除重连管理器
 		if (exception instanceof ManuallyDisconnectException) {
 			if (mReconnectionManager != null) {
 				mReconnectionManager.detach();
@@ -331,6 +330,9 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 		return this;
 	}
 
+	/**
+	 * 断开socket通道的线程
+	 */
 	private class DisconnectThread extends Thread {
 		private Exception mException;
 

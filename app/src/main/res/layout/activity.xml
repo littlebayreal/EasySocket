@@ -13,13 +13,13 @@
         android:text="简单示例(Simple Demo)"
         android:textAllCaps="false" />
 
-<!--    <Button-->
-<!--        android:id="@+id/btn2"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="65dp"-->
-<!--        android:layout_marginTop="20dp"-->
-<!--        android:text="复杂示例(Complex Demo)"-->
-<!--        android:textAllCaps="false" />-->
+    <Button
+        android:id="@+id/btn2"
+        android:layout_width="match_parent"
+        android:layout_height="65dp"
+        android:layout_marginTop="20dp"
+        android:text="复杂示例(Complex Demo)"
+        android:textAllCaps="false" />
 
 
     <TextView

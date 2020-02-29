@@ -1,5 +1,6 @@
 package com.sziti.easysocketlib.client;
 
+import com.sziti.easysocketlib.SLog;
 import com.sziti.easysocketlib.base.AbsLoopThread;
 import com.sziti.easysocketlib.base.EasySocketOptions;
 import com.sziti.easysocketlib.exceptions.DogDeadException;
@@ -128,7 +129,6 @@ public class PulseManager implements IPulse {
      * 心跳线程
      */
     private class PulseThread extends AbsLoopThread {
-
         @Override
         protected void runInLoopThread() throws Exception {
             if (isDead) {
@@ -150,6 +150,7 @@ public class PulseManager implements IPulse {
 
         @Override
         protected void loopFinish(Exception e) {
+        	SLog.e("PulseManager:"+ e.getMessage());
         }
     }
 }

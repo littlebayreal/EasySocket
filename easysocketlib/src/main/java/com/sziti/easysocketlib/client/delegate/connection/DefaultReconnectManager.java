@@ -31,6 +31,7 @@ public class DefaultReconnectManager extends AbsReconnectionManager {
         mReconnectTestingThread = new ReconnectTestingThread();
     }
 
+    //断开连接后的逻辑处理
     @Override
     public void onSocketDisconnection(ConnectionInfo info, String action, Exception e) {
         if (isNeedReconnect(e)) {//break with exception
