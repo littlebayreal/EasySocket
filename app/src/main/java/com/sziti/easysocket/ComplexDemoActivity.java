@@ -333,7 +333,7 @@ public class ComplexDemoActivity extends AppCompatActivity {
 		mSetFrequency.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				if (mManager == null) {
+				if (mManager == null || mManager.getPulseManager() == null) {
 					return;
 				}
 				String frequencyStr = mFrequencyET.getText().toString();
@@ -353,7 +353,7 @@ public class ComplexDemoActivity extends AppCompatActivity {
 		mMenualPulse.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				if (mManager == null) {
+				if (mManager == null || mManager.getPulseManager() == null) {
 					return;
 				}
 				SLog.i("ComplexDemo:"+ mManager.getPulseManager().toString());
