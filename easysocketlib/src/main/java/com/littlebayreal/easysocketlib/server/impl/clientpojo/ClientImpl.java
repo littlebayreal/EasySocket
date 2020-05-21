@@ -219,7 +219,6 @@ public class ClientImpl extends AbsClient {
 
 	@Override
 	public IClient registerReceiver(IClientIOCallback clientIOCallback) {
-
 		if (isDead) {
             return this;
         }

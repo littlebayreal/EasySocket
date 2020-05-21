@@ -30,7 +30,6 @@ public class DefaultReconnectManager extends AbsReconnectionManager {
     public DefaultReconnectManager() {
         mReconnectTestingThread = new ReconnectTestingThread();
     }
-
     //断开连接后的逻辑处理
     @Override
     public void onSocketDisconnection(ConnectionInfo info, String action, Exception e) {
@@ -40,12 +39,10 @@ public class DefaultReconnectManager extends AbsReconnectionManager {
             resetThread();
         }
     }
-
     @Override
     public void onSocketConnectionSuccess(ConnectionInfo info, String action) {
         resetThread();
     }
-
     //连接失败后的逻辑处理
     @Override
     public void onSocketConnectionFailed(ConnectionInfo info, String action, Exception e) {
@@ -102,20 +99,26 @@ public class DefaultReconnectManager extends AbsReconnectionManager {
      * 重置重连线程,关闭线程
      */
     private synchronized void resetThread() {
-        if (mReconnectTestingThread != null) {
-            mReconnectTestingThread.shutdown();
-        }
+		if (mReconnectTestingThread != null) {
+			mReconnectTestingThread.shutdown();
+			mReconnectTestingThread = null;
+		}
     }
 
     /**
      * 开始延迟重连
      */
     private void reconnectDelay() {
-        synchronized (mReconnectTestingThread) {
-            if (mReconnectTestingThread.isShutdown()) {
-                mReconnectTestingThread.start();
-            }
-        }
+		if (mReconnectTestingThread == null) {
+			mReconnectTestingThread = new ReconnectTestingThread();
+			mReconnectTestingThread.start();
+		} else {
+			synchronized (mReconnectTestingThread) {
+				if (mReconnectTestingThread.isShutdown()) {
+					mReconnectTestingThread.start();
+				}
+			}
+		}
     }
 
     @Override
@@ -131,7 +134,6 @@ public class DefaultReconnectManager extends AbsReconnectionManager {
         private long mReconnectTimeDelay = 10 * 1000;
 
         @Override
-
         protected void beforeLoop() throws Exception {
             super.beforeLoop();
             //连接尝试时间需要根据次数延长
@@ -191,7 +193,6 @@ public class DefaultReconnectManager extends AbsReconnectionManager {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
         return true;
     }
 

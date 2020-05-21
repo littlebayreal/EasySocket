@@ -67,6 +67,11 @@ public class CommonReaderProtocol implements IReaderProtocol {
 	public int getHeaderLength() {
 		return mHeaderLength;
 	}
+
+	@Override
+	public int getHeaderLength(byte[] data) {
+		return 0;
+	}
 	/**
 	 * 获取协议中已确定的报文分隔符
 	 * @return
@@ -91,6 +96,12 @@ public class CommonReaderProtocol implements IReaderProtocol {
 		return mIByteEscape;
 	}
 
+	/**
+	 * 注:如果采用的是首尾分隔符，此方法可以忽略
+	 * @param header    根据getHeaderLength()方法获得的包头原始数据.开发者应该从此header种解析出包体长度数据.
+	 * @param byteOrder 当前包头字节数组种,包头数据的字节序类型.
+	 * @return
+	 */
 	@Override
 	public int getBodyLength(byte[] header, ByteOrder byteOrder) {
 		//通过头部解析的报文 解析报文的body长度
@@ -98,5 +109,4 @@ public class CommonReaderProtocol implements IReaderProtocol {
 		int msgLength = msgProp & 0x3ff;
 		return msgLength + 1 + 1;
 	}
-
 }

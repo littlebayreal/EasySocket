@@ -32,6 +32,7 @@ import com.littlebayreal.easysocketlib.config.APIConfig;
 import com.littlebayreal.easysocketlib.interfaces.protocol.IHeaderProtocol;
 import com.littlebayreal.easysocketlib.interfaces.send.ISendable;
 import com.littlebayreal.easysocketlib.protocol.CommonReaderProtocol;
+import com.littlebayreal.easysocketlib.protocol.CustomCommonReaderProtocol;
 import com.littlebayreal.easysocketlib.server.action.ServerActionAdapter;
 import com.littlebayreal.easysocketlib.server.impl.EasyServerOptions;
 import com.littlebayreal.easysocketlib.server.interfaces.IClient;
@@ -141,7 +142,7 @@ public class MainActivity extends AppCompatActivity implements IClientIOCallback
 //					mServerManager.listen(new EasyServerOptions.Builder().setReaderProtocol(new CommonReaderProtocol(CommonReaderProtocol.PROTOCOL_RESOLUTION_BY_PACKAGE_LENGTH,
 //						13,true, APIConfig.pkg_delimiter,true)).build());
 
-					mServerManager.listen(new EasyServerOptions.Builder().setReaderProtocol(new CommonReaderProtocol(CommonReaderProtocol.PROTOCOL_RESOLUTION_BY_DELIMITER,
+					mServerManager.listen(new EasyServerOptions.Builder().setReaderProtocol(new CustomCommonReaderProtocol(CommonReaderProtocol.PROTOCOL_RESOLUTION_BY_DELIMITER,
 						true,APIConfig.pkg_delimiter,13,true,new DefaultByteEscape())).build());
 				} else {
 					mServerManager.shutdown();
@@ -220,7 +221,6 @@ public class MainActivity extends AppCompatActivity implements IClientIOCallback
 			case 0x0100:
 				byte[] body = BitOperator.splitBytes(originalData.getBodyBytes(),0,originalData.getBodyBytes().length - 3);
 				Log.i("onClientIOServer", Thread.currentThread().getName() + " 接收到:" + client.getHostIp() + " 握手信息:" + new String(body,APIConfig.string_charset));
-
 				//发送注册报文
 				Register register = new Register("注册");
 				IHeaderProtocol iHeaderProtocol = new Jt808ProtocolHeader.Builder()

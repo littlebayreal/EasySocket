@@ -218,7 +218,6 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 			mReconnectionManager.attach(this);
 			SLog.i("ReconnectionManager is attached.");
 		}
-
 		String info = mRemoteConnectionInfo.getIp() + ":" + mRemoteConnectionInfo.getPort();
 		mConnectThread = new ConnectionThread(" Connect thread for " + info);
 		//设置连接线程为守护线程
@@ -229,7 +228,6 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 		public ConnectionThread(String name) {
 			super(name);
 		}
-
 		@Override
 		public void run() {
 			try {
@@ -245,11 +243,11 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 					SLog.i("try bind: " + mLocalConnectionInfo.getIp() + " port:" + mLocalConnectionInfo.getPort());
 					mSocket.bind(new InetSocketAddress(mLocalConnectionInfo.getIp(), mLocalConnectionInfo.getPort()));
 				}
-
 				SLog.i("Start connect: " + mRemoteConnectionInfo.getIp() + ":" + mRemoteConnectionInfo.getPort() + " socket server...");
 				mSocket.connect(new InetSocketAddress(mRemoteConnectionInfo.getIp(), mRemoteConnectionInfo.getPort()), mOptions.getConnectTimeoutSecond() * 1000);
 				//关闭Nagle算法,无论TCP数据报大小,立即发送
-				mSocket.setTcpNoDelay(true);
+				mSocket.setTcpNoDelay(false);
+				mSocket.setSoLinger(true, 1);
 				resolveManager();
 				sendBroadcast(IAction.ACTION_CONNECTION_SUCCESS);
 				SLog.i("Socket server: " + mRemoteConnectionInfo.getIp() + ":" + mRemoteConnectionInfo.getPort() + " connect successful!");
@@ -323,7 +321,6 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 	public IConnectionManager send(ISendable sendable) {
 		//在发送之前先放入补发线程
 		mResendActionHandler.addForResend(sendable);
-
 		if (mManager != null && sendable != null && isConnect()) {
 			mManager.send(sendable);
 		}
@@ -347,7 +344,6 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 				if (mManager != null) {
 					mManager.close(mException);
 				}
-
 				if (mConnectThread != null && mConnectThread.isAlive()) {
 					mConnectThread.interrupt();
 					try {
@@ -380,7 +376,6 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 					sendBroadcast(IAction.ACTION_DISCONNECTION, mException);
 				}
 				mSocket = null;
-
 				if (mException != null) {
 					SLog.e("socket is disconnecting because: " + mException.getMessage());
 					if (mOptions.isDebug()) {

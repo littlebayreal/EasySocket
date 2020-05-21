@@ -18,6 +18,7 @@ import com.google.gson.JsonObject;
 import com.littlebayreal.easysocket.adapter.LogAdapter;
 import com.littlebayreal.easysocket.data.LogBean;
 import com.littlebayreal.easysocket.data.PulseBean;
+import com.littlebayreal.easysocket.data.PulseRequestBean;
 import com.littlebayreal.easysocket.data.Register;
 import com.littlebayreal.easysocketlib.EasySocket;
 import com.littlebayreal.easysocketlib.SLog;
@@ -38,6 +39,7 @@ import com.littlebayreal.easysocketlib.interfaces.protocol.IHeaderProtocol;
 import com.littlebayreal.easysocketlib.interfaces.send.IPulseSendable;
 import com.littlebayreal.easysocketlib.interfaces.send.ISendable;
 import com.littlebayreal.easysocketlib.protocol.CommonReaderProtocol;
+import com.littlebayreal.easysocketlib.protocol.CustomCommonReaderProtocol;
 import com.littlebayreal.easysocketlib.util.BitOperator;
 import com.littlebayreal.easysocketlib.util.HexStringUtils;
 import com.littlebayreal.easysocketlib.util.SerialNumGen;
@@ -71,24 +73,33 @@ public class ComplexDemoActivity extends AppCompatActivity {
 			//发送握手包
 //            mManager.send(new HandShakeBean());
 			//发送注册报文
-			Register register = new Register("注册");
-			IHeaderProtocol iHeaderProtocol = new Jt808ProtocolHeader.Builder()
-				.setMsgId(0x0100)
-				.setTerminalPhone("15850101933").build();
-			register.setHeaderProtocol(iHeaderProtocol);
-			register.setSerialNum(SerialNumGen.getInstance().getSerialNum());
-			mManager.send(register);
+//			Register register = new Register("注册");
+//			IHeaderProtocol iHeaderProtocol = new Jt808ProtocolHeader.Builder()
+//				.setMsgId(0x0100)
+//				.setTerminalPhone("10512999999").build();
+//			register.setHeaderProtocol(iHeaderProtocol);
+//			register.setSerialNum(SerialNumGen.getInstance().getSerialNum());
+//			mManager.send(register);
 			mConnect.setText("DisConnect");
-			initSwitch();
+//			initSwitch();
 
 			//设置心跳
-			PulseBean pulseBean = new PulseBean();
-			iHeaderProtocol = new Jt808ProtocolHeader.Builder()
-				.setMsgId(0x0300)
-				.setTerminalPhone("15850101933").build();
-			pulseBean.setSerialNum(SerialNumGen.getInstance().getSerialNum());
-			pulseBean.setHeaderProtocol(iHeaderProtocol);
-			mManager.getPulseManager().setPulseSendable(pulseBean);
+			//设置心跳  首次触发可以在鉴权成功之后 调用mIconnectManager.getPulseManager().pulse();
+			PulseRequestBean pulseRequestData = new PulseRequestBean();
+			IHeaderProtocol iHeaderProtocol = new Jt808ProtocolHeader.Builder()
+				.setMsgId(0x0002)
+				.setTerminalPhone("10512999999").build();
+			pulseRequestData.setSerialNum(SerialNumGen.getInstance().getSerialNum());
+			pulseRequestData.setHeaderProtocol(iHeaderProtocol);
+			mManager.getPulseManager().setPulseSendable(pulseRequestData);
+
+//			PulseBean pulseBean = new PulseBean();
+//			iHeaderProtocol = new Jt808ProtocolHeader.Builder()
+//				.setMsgId(0x0300)
+//				.setTerminalPhone("15850101933").build();
+//			pulseBean.setSerialNum(SerialNumGen.getInstance().getSerialNum());
+//			pulseBean.setHeaderProtocol(iHeaderProtocol);
+//			mManager.getPulseManager().setPulseSendable(pulseBean);
 			mIPET.setEnabled(true);
 			mPortET.setEnabled(true);
 		}
@@ -161,7 +172,7 @@ public class ComplexDemoActivity extends AppCompatActivity {
 		@Override
 		public void onSocketWriteResponse(ConnectionInfo info, String action, ISendable data) {
 			logSend(HexStringUtils.toHexString(data.parse()));
-//            byte[] bytes = data.parse();
+			byte[] bytes = data.parse();
 //            bytes = Arrays.copyOfRange(bytes, 4, bytes.length);
 //            String str = new String(bytes, Charset.forName("utf-8"));
 //            JsonObject jsonObject = new JsonParser().parse(str).getAsJsonObject();
@@ -186,7 +197,7 @@ public class ComplexDemoActivity extends AppCompatActivity {
 //            JsonObject jsonObject = new JsonParser().parse(str).getAsJsonObject();
 //            int cmd = jsonObject.get("cmd").getAsInt();
 //            if (cmd == 14) {
-			logSend("发送心跳包(Heartbeat Sending):"+ HexStringUtils.toHexString(data.parse()));
+//			logSend("发送心跳包(Heartbeat Sending):" + HexStringUtils.toHexString(data.parse()));
 //            }
 		}
 	};
@@ -226,7 +237,7 @@ public class ComplexDemoActivity extends AppCompatActivity {
 		mReceList.setLayoutManager(manager2);
 		mReceList.setAdapter(mReceLogAdapter);
 		//设置连接信息
-		mInfo = new ConnectionInfo("192.168.1.46", 8080);
+		mInfo = new ConnectionInfo("192.168.128.2", 10002);
 
 		final Handler handler = new Handler(Looper.getMainLooper());
 //        EasySocketOptions.Builder builder = new EasySocketOptions.Builder();
@@ -239,14 +250,13 @@ public class ComplexDemoActivity extends AppCompatActivity {
 //        });
 //        //打开通道
 //        mManager = EasySocket.open(mInfo).option(builder.build());
-
 		EasySocketOptions mOkOptions = new EasySocketOptions.Builder()
 			//重发模式下 被标记为需要重发的信息会不断重发，直至收到服务器应答根据判断条件移除
 			.setIsResendMode(true)
 			//定义框架用什么模式进行解析 可以通过分隔符+包长，也可以首位分隔符，当然在oksocket中的只使用包长也可以
 //			    .setReaderProtocol(new CommonReaderProtocol(CommonReaderProtocol.PROTOCOL_RESOLUTION_BY_PACKAGE_LENGTH,
 //					13,true,APIConfig.pkg_delimiter,true))
-			.setReaderProtocol(new CommonReaderProtocol(CommonReaderProtocol.PROTOCOL_RESOLUTION_BY_DELIMITER,
+			.setReaderProtocol(new CustomCommonReaderProtocol(CommonReaderProtocol.PROTOCOL_RESOLUTION_BY_DELIMITER,
 				true, APIConfig.pkg_delimiter, 13, true, new DefaultByteEscape()))
 			//重连管理器
 			.setReconnectionManager(new DefaultReconnectManager())
@@ -269,7 +279,7 @@ public class ComplexDemoActivity extends AppCompatActivity {
 			.setPulseFrequency(3000)
 			//设置框架在多少次心跳没收到后判定连接失效
 			.setPulseFeedLoseTimes(3)
-		    //设置框架缓存区每次读取的长度 单位byte
+			//设置框架缓存区每次读取的长度 单位byte
 			.setReadPackageBytes(50)
 			//发送给服务器时单个数据包的总长度
 			.setWritePackageBytes(100)
@@ -368,8 +378,8 @@ public class ComplexDemoActivity extends AppCompatActivity {
 				if (mManager == null || mManager.getPulseManager() == null) {
 					return;
 				}
-				SLog.i("ComplexDemo:"+ mManager.getPulseManager().toString());
-				mManager.getPulseManager().trigger();
+//				mManager.getPulseManager().trigger();
+				mManager.getPulseManager().pulse();
 			}
 		});
 	}
@@ -402,6 +412,9 @@ public class ComplexDemoActivity extends AppCompatActivity {
 					logBean = new LogBean(System.currentTimeMillis(), new String(BitOperator.splitBytes(originalData.getBodyBytes(), 0,
 						originalData.getBodyBytes().length - 3), APIConfig.string_charset));
 					Log.i("ComplexDemoActivity", logBean.toString());
+
+					mReceLogAdapter.getDataList().add(0, logBean);
+					mReceLogAdapter.notifyDataSetChanged();
 					break;
 				case 0x0300:
 					logBean = new LogBean(System.currentTimeMillis(), new String(BitOperator.splitBytes(originalData.getBodyBytes(), 0,
@@ -409,9 +422,17 @@ public class ComplexDemoActivity extends AppCompatActivity {
 					//喂狗
 					mManager.getPulseManager().feed();
 					break;
+				case 0x8001:
+					logBean = new LogBean(System.currentTimeMillis(), "接收心跳报文:" + HexStringUtils.toHexString(BitOperator.concatAll(originalData.getHeadBytes(),
+						originalData.getBodyBytes())));
+					//喂狗
+					mManager.getPulseManager().feed();
+					break;
+				default:
+					logBean = new LogBean(System.currentTimeMillis(), HexStringUtils.toHexString(BitOperator.concatAll(originalData.getHeadBytes(),
+						originalData.getBodyBytes())));
+					break;
 			}
-			mReceLogAdapter.getDataList().add(0, logBean);
-			mReceLogAdapter.notifyDataSetChanged();
 		} else {
 			final String threadName = Thread.currentThread().getName();
 			new Handler(Looper.getMainLooper()).post(new Runnable() {

@@ -430,7 +430,7 @@ public class EasySocketOptions implements IIOCoreOptions {
         okOptions.mPulseFrequency = 5 * 1000;
         okOptions.mIOThreadMode = IOThreadMode.DUPLEX;
         okOptions.mReaderProtocol = new DefaultNormalReaderProtocol();
-        okOptions.mMaxReadDataMB = 5;
+        okOptions.mMaxReadDataMB = 1;
         okOptions.mConnectTimeoutSecond = 3;
         okOptions.mWritePackageBytes = 100;
         okOptions.mReadPackageBytes = 50;

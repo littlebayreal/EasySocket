@@ -33,6 +33,7 @@ import com.littlebayreal.easysocketlib.interfaces.protocol.IHeaderProtocol;
 import com.littlebayreal.easysocketlib.interfaces.send.IPulseSendable;
 import com.littlebayreal.easysocketlib.interfaces.send.ISendable;
 import com.littlebayreal.easysocketlib.protocol.CommonReaderProtocol;
+import com.littlebayreal.easysocketlib.protocol.CustomCommonReaderProtocol;
 import com.littlebayreal.easysocketlib.util.BitOperator;
 import com.littlebayreal.easysocketlib.util.HexStringUtils;
 import com.littlebayreal.easysocketlib.util.SerialNumGen;
@@ -71,10 +72,11 @@ public class SimpleDemoActivity extends AppCompatActivity {
 			Register register = new Register("注册");
 			IHeaderProtocol iHeaderProtocol = new Jt808ProtocolHeader.Builder()
 				.setMsgId(0x0100)
-				.setTerminalPhone("15850101933").build();
+				.setTerminalPhone("10512909090").build();
 			register.setHeaderProtocol(iHeaderProtocol);
 			register.setSerialNum(SerialNumGen.getInstance().getSerialNum());
 			mManager.send(register);
+			logSend("连接成功(Connecting Success!!!)");
             mConnect.setText("DisConnect");
             mIPET.setEnabled(false);
             mPortET.setEnabled(false);
@@ -163,12 +165,10 @@ public class SimpleDemoActivity extends AppCompatActivity {
         mInfo = new ConnectionInfo(mIPET.getText().toString(), Integer.parseInt(mPortET.getText().toString()));
         mOkOptions = new EasySocketOptions.Builder()
 			    .setIsResendMode(true)
-//			    .setReaderProtocol(new CommonReaderProtocol(CommonReaderProtocol.PROTOCOL_RESOLUTION_BY_PACKAGE_LENGTH,
-//					13,true,APIConfig.pkg_delimiter,true))
-			    .setReaderProtocol(new CommonReaderProtocol(CommonReaderProtocol.PROTOCOL_RESOLUTION_BY_DELIMITER,
-					true,APIConfig.pkg_delimiter,13,true,new DefaultByteEscape()))
+			    .setReaderProtocol(new CustomCommonReaderProtocol(CommonReaderProtocol.PROTOCOL_RESOLUTION_BY_DELIMITER,
+					true, APIConfig.pkg_delimiter, 13, true, new DefaultByteEscape()))
                 .setReconnectionManager(new NoneReconnect())
-                .setConnectTimeoutSecond(10)
+                .setConnectTimeoutSecond(30)
                 .setCallbackThreadModeToken(new EasySocketOptions.ThreadModeToken() {
                     @Override
                     public void handleCallbackEvent(ActionDispatcher.ActionRunnable runnable) {

@@ -17,14 +17,15 @@ public class ResendReaderImpl extends AbsReader {
 	//残留的数据
 	private ByteBuffer mRemainingBuf;
 	//针对首尾分隔符处理进行的数据缓存队列
-	private ArrayList<Byte> byteList = new ArrayList();
+//	private ArrayList<Byte> byteList = new ArrayList();
 	private byte[] buffer;
-	private int mRemainingLength;
+//	private int mRemainingLength;
 	@Override
 	public void setOption(IIOCoreOptions option) {
 		super.setOption(option);
 		SLog.i("getMaxReadDataMB:"+ option.getMaxReadDataMB());
 		buffer = new byte[option.getMaxReadDataMB()*1024*1024];
+		mRemainingBuf = ByteBuffer.allocate(buffer.length);
 	}
     public ResendReaderImpl(String threadName){
 		super(threadName);
@@ -183,18 +184,20 @@ public class ResendReaderImpl extends AbsReader {
 				if (!commonReaderProtocol.isDelimiter() || commonReaderProtocol.getDelimiter() == -1)
 					throw new RuntimeException("use read by delimiter，please set delimiter and open setting first");
 				readPackageFromChannel();
-				//缓存区长度至少要大于最短包长 才会开始解析
-				while (byteList.size() > (commonReaderProtocol.getHeaderLength() + (commonReaderProtocol.isOpenCheck() ? 1 : 0) + 1)) {
+				//需要处理的所有字节
+				mRemainingBuf.flip();
+
+				while (mRemainingBuf.remaining() >= (commonReaderProtocol.getHeaderLength() + (commonReaderProtocol.isOpenCheck() ? 1 : 0) + 1)) {
 					int count = 0;
 					int start = 0;
 					//默认是接收信息的长度
 					int end = 0;
 					//需要处理的所有字节
-					byte[] byte_temp = new byte[mRemainingLength];
-					for (int j = 0; j < mRemainingLength; j++) {
-						byte_temp[j] = byteList.get(j);
+					byte[] byte_temp = new byte[mRemainingBuf.remaining()];
+					for (int j = 0; j < mRemainingBuf.remaining(); j++) {
+						byte_temp[j] = mRemainingBuf.get(j);
 					}
-					for (int i = 0; i < mRemainingLength; i++) {
+					for (int i = 0; i < byte_temp.length; i++) {
 						if (byte_temp[i] == commonReaderProtocol.getDelimiter()) {
 							count++;
 							if (count == 1) {
@@ -207,10 +210,12 @@ public class ResendReaderImpl extends AbsReader {
 							}
 						}
 					}
-                    //未找到第二个7e  那么视为半包
+					//未找到第二个7e  那么视为半包
 					if (count == 1) {
-						SLog.i("ResendReaderImpl------半包 mRemainingLength：" + mRemainingLength);
-						SLog.i("ResendReaderImpl------半包:" + HexStringUtils.toHexString(byte_temp));
+						mRemainingBuf.clear();
+						//将剩余未解析的字节放入缓存区
+						mRemainingBuf.put(byte_temp);
+						SLog.i("ResendReaderImpl------半包:position:" + mRemainingBuf.position() + "-----------limit:" + mRemainingBuf.limit());
 						break;
 					}
 					//头尾都找到  则视为整包
@@ -219,46 +224,112 @@ public class ResendReaderImpl extends AbsReader {
 						byte[] byte_item_temp = new byte[end - start + 1];
 						SLog.i("ResendReaderImpl------byte_item_temp长度:" + byte_item_temp.length + "start:" + start + "end：" + end);
 						System.arraycopy(byte_temp, start, byte_item_temp, 0, end - start + 1);
-//                                currentLength = currentLength - byte_temp.length;
 						//拿到未转义数据
-						SLog.i("ResendReaderImpl------转义之前:" + HexStringUtils.toHexString(byte_temp));
-//                                CarMasterApplication.getInstance().getSocketLogClient().writeMsg("转义前:" + HexStringUtils.toHexString(buffer));
+						SLog.i("ResendReaderImpl------转义之前:" + byte_item_temp.length);
 						//拿到转义数据
 						byte[] transBuffer = commonReaderProtocol.getmIByteEscape().decodeBytes(byte_item_temp, 0, byte_item_temp.length);
 						SLog.i("ResendReaderImpl------转义之后:" + transBuffer.length);
 						byte[] byte_item = new byte[transBuffer.length];
 						System.arraycopy(transBuffer, 0, byte_item, 0, byte_item.length);
-//                                LogUtil.d(TAG, "SocketClient,ReceiveThread------item:" + HexStringUtils.toHexString(byte_item));
-//                                CarMasterApplication.getInstance().getSocketLogClient().writeMsg("输出结果:" + HexStringUtils.toHexString(byte_item));
 						//校验码是否正确  判断是否是一条正确的原始信息
 						int check = byte_item[byte_item.length - 2];
 						int calculateCheck = BitOperator.getCheckSum4JT808(byte_item, 1, byte_item.length - 2);
-						SLog.i("ResendReaderImpl------currentLength:" + mRemainingLength);
 						//如果校验码不正确  说明该包有问题  需要丢弃
 						SLog.i("ResendReaderImpl------check:" + check + "calcheck:" + calculateCheck);
-						if (check != calculateCheck) {
-							mRemainingLength = mRemainingLength - byte_item_temp.length;
-							byteList.subList(0, end + 1).clear();
+						if (commonReaderProtocol.isOpenCheck() && check != calculateCheck) {
+							mRemainingBuf.clear();
+							mRemainingBuf.put(byte_temp, end + 1, byte_temp.length - end - 1);
+							mRemainingBuf.flip();
 							continue;
 						}
-						SLog.i("ResendReaderImpl:" + HexStringUtils.toHexString(byte_item));
-						//前面的验证都通过  说明是一个完整的包  可以发送给界面
-//                                currentLength = currentLength - byte_item_temp.length;
-						mRemainingLength = mRemainingLength - end - 1;
-//                                System.arraycopy(byte_temp, byte_item_temp.length, buffer, 0, currentLength);
-						SLog.i("ResendReaderImpl------end:" + end);
-						byteList.subList(0, end + 1).clear();
-						SLog.i( "ResendReaderImpl------currentLength:" + mRemainingLength);
-						SLog.i( "ResendReaderImpl------\n完整的消息：" + HexStringUtils.toHexString(byte_item));
+						mRemainingBuf.clear();
+						mRemainingBuf.put(byte_temp, end + 1, byte_temp.length - end - 1);
+						SLog.i("ResendReaderImpl------处理一条报文后截取currentLength:" + mRemainingBuf.position());
+						mRemainingBuf.flip();
+						SLog.i("ResendReaderImpl------byte_item：" + HexStringUtils.toHexString(byte_item));
 						//收到服务器过来的消息，就发送回调
 						OriginalData originalData = new OriginalData();
-						originalData.setHeadBytes(BitOperator.splitBytes(byte_item,0,commonReaderProtocol.getHeaderLength() - 1));
-						originalData.setBodyBytes(BitOperator.splitBytes(byte_item,commonReaderProtocol.getHeaderLength(),byte_item.length - 1));
+						originalData.setHeadBytes(BitOperator.splitBytes(byte_item, 0, commonReaderProtocol.getHeaderLength(byte_item) - 1));
+						originalData.setBodyBytes(BitOperator.splitBytes(byte_item, commonReaderProtocol.getHeaderLength(byte_item), byte_item.length - 1));
 						mStateSender.sendBroadcast(IOAction.ACTION_READ_COMPLETE, originalData);
-						SLog.i("ResendReaderImpl------bytelistsize:" + byteList.size() + "byte_temp:" + byte_temp.length + "currentLength:" + mRemainingLength);
-						SLog.i("ResendReaderImpl------一轮解析完成");
 					}
 				}
+//				//缓存区长度至少要大于最短包长 才会开始解析
+//				while (byteList.size() > (commonReaderProtocol.getHeaderLength() + (commonReaderProtocol.isOpenCheck() ? 1 : 0) + 1)) {
+//					int count = 0;
+//					int start = 0;
+//					//默认是接收信息的长度
+//					int end = 0;
+//					//需要处理的所有字节
+//					byte[] byte_temp = new byte[mRemainingLength];
+//					for (int j = 0; j < mRemainingLength; j++) {
+//						byte_temp[j] = byteList.get(j);
+//					}
+//					for (int i = 0; i < mRemainingLength; i++) {
+//						if (byte_temp[i] == commonReaderProtocol.getDelimiter()) {
+//							count++;
+//							if (count == 1) {
+//								start = i;
+//								continue;
+//							}
+//							if (count == 2) {
+//								end = i;
+//								break;
+//							}
+//						}
+//					}
+//                    //未找到第二个7e  那么视为半包
+//					if (count == 1) {
+//						SLog.i("ResendReaderImpl------半包 mRemainingLength：" + mRemainingLength);
+//						SLog.i("ResendReaderImpl------半包:" + HexStringUtils.toHexString(byte_temp));
+//						break;
+//					}
+//					//头尾都找到  则视为整包
+//					if (count == 2) {
+//						//需要解析的字节流
+//						byte[] byte_item_temp = new byte[end - start + 1];
+//						SLog.i("ResendReaderImpl------byte_item_temp长度:" + byte_item_temp.length + "start:" + start + "end：" + end);
+//						System.arraycopy(byte_temp, start, byte_item_temp, 0, end - start + 1);
+////                                currentLength = currentLength - byte_temp.length;
+//						//拿到未转义数据
+//						SLog.i("ResendReaderImpl------转义之前:" + HexStringUtils.toHexString(byte_temp));
+////                                CarMasterApplication.getInstance().getSocketLogClient().writeMsg("转义前:" + HexStringUtils.toHexString(buffer));
+//						//拿到转义数据
+//						byte[] transBuffer = commonReaderProtocol.getmIByteEscape().decodeBytes(byte_item_temp, 0, byte_item_temp.length);
+//						SLog.i("ResendReaderImpl------转义之后:" + transBuffer.length);
+//						byte[] byte_item = new byte[transBuffer.length];
+//						System.arraycopy(transBuffer, 0, byte_item, 0, byte_item.length);
+////                                LogUtil.d(TAG, "SocketClient,ReceiveThread------item:" + HexStringUtils.toHexString(byte_item));
+////                                CarMasterApplication.getInstance().getSocketLogClient().writeMsg("输出结果:" + HexStringUtils.toHexString(byte_item));
+//						//校验码是否正确  判断是否是一条正确的原始信息
+//						int check = byte_item[byte_item.length - 2];
+//						int calculateCheck = BitOperator.getCheckSum4JT808(byte_item, 1, byte_item.length - 2);
+//						SLog.i("ResendReaderImpl------currentLength:" + mRemainingLength);
+//						//如果校验码不正确  说明该包有问题  需要丢弃
+//						SLog.i("ResendReaderImpl------check:" + check + "calcheck:" + calculateCheck);
+//						if (check != calculateCheck) {
+//							mRemainingLength = mRemainingLength - byte_item_temp.length;
+//							byteList.subList(0, end + 1).clear();
+//							continue;
+//						}
+//						SLog.i("ResendReaderImpl:" + HexStringUtils.toHexString(byte_item));
+//						//前面的验证都通过  说明是一个完整的包  可以发送给界面
+////                                currentLength = currentLength - byte_item_temp.length;
+//						mRemainingLength = mRemainingLength - end - 1;
+////                                System.arraycopy(byte_temp, byte_item_temp.length, buffer, 0, currentLength);
+//						SLog.i("ResendReaderImpl------end:" + end);
+//						byteList.subList(0, end + 1).clear();
+//						SLog.i( "ResendReaderImpl------currentLength:" + mRemainingLength);
+//						SLog.i( "ResendReaderImpl------\n完整的消息：" + HexStringUtils.toHexString(byte_item));
+//						//收到服务器过来的消息，就发送回调
+//						OriginalData originalData = new OriginalData();
+//						originalData.setHeadBytes(BitOperator.splitBytes(byte_item,0,commonReaderProtocol.getHeaderLength() - 1));
+//						originalData.setBodyBytes(BitOperator.splitBytes(byte_item,commonReaderProtocol.getHeaderLength(),byte_item.length - 1));
+//						mStateSender.sendBroadcast(IOAction.ACTION_READ_COMPLETE, originalData);
+//						SLog.i("ResendReaderImpl------bytelistsize:" + byteList.size() + "byte_temp:" + byte_temp.length + "currentLength:" + mRemainingLength);
+//						SLog.i("ResendReaderImpl------一轮解析完成");
+//					}
+//				}
 			}
 		} catch (Exception e) {
 			SLog.e("读取报错:"+ e.getMessage());
@@ -268,6 +339,23 @@ public class ResendReaderImpl extends AbsReader {
 
 	}
 
+//	/**
+//	 * 将缓存区内容保存到byteList缓存队列中
+//	 *
+//	 * @throws IOException
+//	 */
+//	private void readPackageFromChannel() throws IOException {
+//		int len = mInputStream.available();
+//		if (len > 0) {
+//			SLog.i(mThreadName+"readPackageFromChannel():"+ len);
+//			mInputStream.read(buffer, 0, len);
+//			mRemainingLength += len;
+//			//每次buffer缓存区读取的内容放到解析缓存区中
+//			for (int k = 0; k < len; k++) {
+//				byteList.add(buffer[k]);
+//			}
+//		}
+//	}
 	/**
 	 * 将缓存区内容保存到byteList缓存队列中
 	 *
@@ -276,16 +364,19 @@ public class ResendReaderImpl extends AbsReader {
 	private void readPackageFromChannel() throws IOException {
 		int len = mInputStream.available();
 		if (len > 0) {
-			SLog.i(mThreadName+"readPackageFromChannel():"+ len);
 			mInputStream.read(buffer, 0, len);
-			mRemainingLength += len;
+			SLog.i(mThreadName+"readPackageFromChannel():len"+ len);
+
 			//每次buffer缓存区读取的内容放到解析缓存区中
-			for (int k = 0; k < len; k++) {
-				byteList.add(buffer[k]);
-			}
+
+			SLog.i(mThreadName+"readPackageFromChannel():放入buffer前mRemainingBuf的position"+ mRemainingBuf.position() + "-------mRemain:"+ mRemainingBuf.remaining());
+			mRemainingBuf.position(mRemainingBuf.position());
+			mRemainingBuf.limit(mRemainingBuf.capacity());
+			mRemainingBuf.put(buffer,0,len);
+
+			SLog.i(mThreadName+"readPackageFromChannel():放入buffer后mRemainingBuf的position"+ mRemainingBuf.position()+ "--------mRemain:"+ mRemainingBuf.remaining());
 		}
 	}
-
 	private void readBodyFromChannel(ByteBuffer byteBuffer) throws IOException {
 		//缓存区还有缓存空间就一直读取
 		while (byteBuffer.hasRemaining()) {

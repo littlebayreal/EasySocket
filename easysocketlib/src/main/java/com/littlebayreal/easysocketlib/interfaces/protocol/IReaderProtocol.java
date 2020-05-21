@@ -13,7 +13,12 @@ public interface IReaderProtocol {
      * @return 包头的长度, 该长度应该是一个固定的包头长度
      */
     int getHeaderLength();
-
+	/**
+	 * 返回包头长度
+	 * @param data 解析的原始数据
+	 * @return
+	 */
+	int getHeaderLength(byte[] data);
     /**
      * 框架根据{@link IReaderProtocol#getHeaderLength()}方法截取到包头后,讲会调用该方法<br>
      * 交由开发者进行解析,开发者应该从参数 {@link #getBodyLength(byte[], ByteOrder)}}header中解析出该次通讯服务端返回的包体长度<br>

@@ -117,15 +117,12 @@ public abstract class AbsReconnectionManager implements ISocketActionListener {
     public void onSocketReadResponse(ConnectionInfo info, String action, OriginalData data) {
         //do nothing;
     }
-
     @Override
     public void onSocketWriteResponse(ConnectionInfo info, String action, ISendable data) {
         //do nothing;
     }
-
     @Override
     public void onPulseSend(ConnectionInfo info, IPulseSendable data) {
         //do nothing;
     }
-
 }

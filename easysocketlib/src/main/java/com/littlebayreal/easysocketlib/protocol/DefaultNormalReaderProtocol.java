@@ -16,7 +16,12 @@ public class DefaultNormalReaderProtocol implements IReaderProtocol {
         return 4;
     }
 
-    @Override
+	@Override
+	public int getHeaderLength(byte[] data) {
+		return 0;
+	}
+
+	@Override
     public int getBodyLength(byte[] header, ByteOrder byteOrder) {
         if (header == null || header.length < getHeaderLength()) {
             return 0;
