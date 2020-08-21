@@ -1,6 +1,8 @@
 package com.littlebayreal.easysocket;
 
 import com.littlebayreal.easysocketlib.SLog;
+import com.littlebayreal.easysocketlib.client.delegate.io.DefaultByteCheck;
+import com.littlebayreal.easysocketlib.interfaces.protocol.IByteCheck;
 import com.littlebayreal.easysocketlib.interfaces.protocol.IByteEscape;
 import com.littlebayreal.easysocketlib.protocol.CommonReaderProtocol;
 import com.littlebayreal.easysocketlib.util.BitOperator;
@@ -11,11 +13,12 @@ public class CustomCommonReaderProtocol extends CommonReaderProtocol {
 	public CustomCommonReaderProtocol(int mResolveType, int mHeaderLength, boolean isDelimiter, int mDelimiter, boolean isOpenCheck) {
 		super(mResolveType, mHeaderLength, isDelimiter, mDelimiter, isOpenCheck);
 	}
-
-	public CustomCommonReaderProtocol(int mResolveType, boolean isDelimiter, int mDelimiter, int mHeaderLength, boolean isOpenCheck, IByteEscape mIByteEscape) {
-		super(mResolveType, isDelimiter, mDelimiter, mHeaderLength, isOpenCheck, mIByteEscape);
+	public CustomCommonReaderProtocol(int mResolveType, boolean isDelimiter, int mDelimiter, int mHeaderLength, boolean isOpenCheck, IByteEscape mIByteEscape){
+		super(mResolveType, isDelimiter, mDelimiter, mHeaderLength, isOpenCheck,new DefaultByteCheck(),mIByteEscape);
 	}
-
+	public CustomCommonReaderProtocol(int mResolveType, boolean isDelimiter, int mDelimiter, int mHeaderLength, boolean isOpenCheck, IByteCheck mIByteCheck, IByteEscape mIByteEscape) {
+		super(mResolveType, isDelimiter, mDelimiter, mHeaderLength, isOpenCheck,mIByteCheck,mIByteEscape);
+	}
 	@Override
 	public int getHeaderLength(byte[] data) {
 		//特殊处理 7e 0 0 0 0 7e

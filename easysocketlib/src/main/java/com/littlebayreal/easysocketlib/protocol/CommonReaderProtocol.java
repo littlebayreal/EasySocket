@@ -52,7 +52,7 @@ public class CommonReaderProtocol implements IReaderProtocol {
 	 * 是否开启分隔符
 	 */
 	private boolean isDelimiter;
-	public CommonReaderProtocol(int mResolveType,int mHeaderLength,boolean isDelimiter,int mDelimiter,boolean isOpenCheck) {
+	public CommonReaderProtocol(int mResolveType, int mHeaderLength, boolean isDelimiter, int mDelimiter, boolean isOpenCheck) {
 		this(mResolveType,isDelimiter,mDelimiter, mHeaderLength,isOpenCheck,isOpenCheck?new DefaultByteCheck():null,null);
 	}
 
