@@ -32,7 +32,6 @@ import com.littlebayreal.easysocketlib.config.APIConfig;
 import com.littlebayreal.easysocketlib.interfaces.protocol.IHeaderProtocol;
 import com.littlebayreal.easysocketlib.interfaces.send.ISendable;
 import com.littlebayreal.easysocketlib.protocol.CommonReaderProtocol;
-import com.littlebayreal.easysocketlib.protocol.CustomCommonReaderProtocol;
 import com.littlebayreal.easysocketlib.server.action.ServerActionAdapter;
 import com.littlebayreal.easysocketlib.server.impl.EasyServerOptions;
 import com.littlebayreal.easysocketlib.server.interfaces.IClient;

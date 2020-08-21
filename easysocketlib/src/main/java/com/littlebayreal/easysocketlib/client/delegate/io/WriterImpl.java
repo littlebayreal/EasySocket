@@ -21,14 +21,16 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 
 public class WriterImpl implements IWriter<IIOCoreOptions> {
-
+	protected String mThreadName;
     private volatile IIOCoreOptions mOkOptions;
 
     private IStateSender mStateSender;
 
     private OutputStream mOutputStream;
     private LinkedBlockingQueue<ISendable> mQueue = new LinkedBlockingQueue<>();
-
+	public WriterImpl(String threadName){
+		mThreadName = threadName;
+	}
     @Override
     public void initialize(OutputStream outputStream, IStateSender stateSender) {
         mStateSender = stateSender;
@@ -45,7 +47,7 @@ public class WriterImpl implements IWriter<IIOCoreOptions> {
         }
         if (sendable != null) {
             try {
-                byte[] sendBytes = sendable.parse();
+				byte[] sendBytes = sendable.parse();
                 int packageSize = mOkOptions.getWritePackageBytes();
                 int remainingCount = sendBytes.length;
                 ByteBuffer writeBuf = ByteBuffer.allocate(packageSize);
@@ -64,10 +66,9 @@ public class WriterImpl implements IWriter<IIOCoreOptions> {
 
                     if (SLog.isDebug()) {
                         byte[] forLogBytes = Arrays.copyOfRange(sendBytes, index, index + realWriteLength);
-                        SLog.i("write bytes: " + HexStringUtils.toHexString(forLogBytes));
-                        SLog.i("bytes write length:" + realWriteLength);
+                        SLog.i(mThreadName +" write bytes: " + HexStringUtils.toHexString(forLogBytes));
+                        SLog.i(mThreadName +" bytes write length:" + realWriteLength);
                     }
-
                     index += realWriteLength;
                     remainingCount -= realWriteLength;
                 }

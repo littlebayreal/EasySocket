@@ -1,5 +1,7 @@
 package com.littlebayreal.easysocketlib.protocol;
 
+import com.littlebayreal.easysocketlib.client.delegate.io.DefaultByteCheck;
+import com.littlebayreal.easysocketlib.interfaces.protocol.IByteCheck;
 import com.littlebayreal.easysocketlib.interfaces.protocol.IByteEscape;
 import com.littlebayreal.easysocketlib.interfaces.protocol.IReaderProtocol;
 import com.littlebayreal.easysocketlib.util.BitOperator;
@@ -43,19 +45,24 @@ public class CommonReaderProtocol implements IReaderProtocol {
 	 */
 	private boolean isOpenCheck;
 	/**
+	 * 校验位计算方法
+	 */
+	private IByteCheck mIByteCheck;
+	/**
 	 * 是否开启分隔符
 	 */
 	private boolean isDelimiter;
 	public CommonReaderProtocol(int mResolveType,int mHeaderLength,boolean isDelimiter,int mDelimiter,boolean isOpenCheck) {
-		this(mResolveType,isDelimiter,mDelimiter, mHeaderLength,isOpenCheck,null);
+		this(mResolveType,isDelimiter,mDelimiter, mHeaderLength,isOpenCheck,isOpenCheck?new DefaultByteCheck():null,null);
 	}
 
-	public CommonReaderProtocol(int mResolveType,boolean isDelimiter,int mDelimiter,int mHeaderLength,boolean isOpenCheck,IByteEscape mIByteEscape) {
+	public CommonReaderProtocol(int mResolveType, boolean isDelimiter, int mDelimiter, int mHeaderLength, boolean isOpenCheck, IByteCheck mIByteCheck, IByteEscape mIByteEscape) {
 		this.mResolveType = mResolveType;
 		this.isDelimiter = isDelimiter;
 		this.mDelimiter = mDelimiter;
 		this.mHeaderLength = mHeaderLength;
 		this.isOpenCheck = isOpenCheck;
+		this.mIByteCheck = mIByteCheck;
 		this.mIByteEscape = mIByteEscape;
 	}
 
@@ -72,6 +79,7 @@ public class CommonReaderProtocol implements IReaderProtocol {
 	public int getHeaderLength(byte[] data) {
 		return 0;
 	}
+
 	/**
 	 * 获取协议中已确定的报文分隔符
 	 * @return
@@ -96,12 +104,10 @@ public class CommonReaderProtocol implements IReaderProtocol {
 		return mIByteEscape;
 	}
 
-	/**
-	 * 注:如果采用的是首尾分隔符，此方法可以忽略
-	 * @param header    根据getHeaderLength()方法获得的包头原始数据.开发者应该从此header种解析出包体长度数据.
-	 * @param byteOrder 当前包头字节数组种,包头数据的字节序类型.
-	 * @return
-	 */
+	public IByteCheck getmIByteCheck() {
+		return mIByteCheck;
+	}
+
 	@Override
 	public int getBodyLength(byte[] header, ByteOrder byteOrder) {
 		//通过头部解析的报文 解析报文的body长度

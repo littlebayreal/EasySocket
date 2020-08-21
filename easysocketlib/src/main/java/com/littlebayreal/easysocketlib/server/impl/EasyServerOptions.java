@@ -3,6 +3,7 @@ package com.littlebayreal.easysocketlib.server.impl;
 
 import com.littlebayreal.easysocketlib.interfaces.io.IIOCoreOptions;
 import com.littlebayreal.easysocketlib.interfaces.protocol.IReaderProtocol;
+import com.littlebayreal.easysocketlib.interfaces.protocol.IWriterProtocol;
 import com.littlebayreal.easysocketlib.protocol.DefaultNormalReaderProtocol;
 
 import java.nio.ByteOrder;
@@ -137,7 +138,12 @@ public class EasyServerOptions implements IIOCoreOptions {
         return mReaderProtocol;
     }
 
-    @Override
+	@Override
+	public IWriterProtocol getWriterProtocol() {
+		return null;
+	}
+
+	@Override
     public ByteOrder getWriteByteOrder() {
         return mWriteOrder;
     }

@@ -83,7 +83,7 @@ public class ActionResendDispatcher extends ActionDispatcher{
 				}
 				break;
 			}
-			case ACTION_RESEND_REQUEST://需要重发的报文
+			case ACTION_RESEND_REQUEST://需要重发的报文 （2020/8/21 0.1.0 修复重发导致的类型转换错误）
 				try {
 					BaseSendData sendable = (BaseSendData) arg;
 					AbsSocketResendHandler resendActionAdapter = (AbsSocketResendHandler) responseHandler;

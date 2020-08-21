@@ -33,7 +33,6 @@ import com.littlebayreal.easysocketlib.interfaces.protocol.IHeaderProtocol;
 import com.littlebayreal.easysocketlib.interfaces.send.IPulseSendable;
 import com.littlebayreal.easysocketlib.interfaces.send.ISendable;
 import com.littlebayreal.easysocketlib.protocol.CommonReaderProtocol;
-import com.littlebayreal.easysocketlib.protocol.CustomCommonReaderProtocol;
 import com.littlebayreal.easysocketlib.util.BitOperator;
 import com.littlebayreal.easysocketlib.util.HexStringUtils;
 import com.littlebayreal.easysocketlib.util.SerialNumGen;

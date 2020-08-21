@@ -4,11 +4,14 @@ import com.littlebayreal.easysocketlib.client.delegate.action.AbsSocketResendHan
 import com.littlebayreal.easysocketlib.client.delegate.connection.AbsReconnectionManager;
 import com.littlebayreal.easysocketlib.client.delegate.connection.DefaultReconnectManager;
 import com.littlebayreal.easysocketlib.client.dispatcher.ActionDispatcher;
+import com.littlebayreal.easysocketlib.client.dispatcher.DefaultResendActionHandler;
 import com.littlebayreal.easysocketlib.exceptions.DogDeadException;
 import com.littlebayreal.easysocketlib.interfaces.connection.IConfiguration;
 import com.littlebayreal.easysocketlib.interfaces.io.IIOCoreOptions;
 import com.littlebayreal.easysocketlib.interfaces.protocol.IReaderProtocol;
+import com.littlebayreal.easysocketlib.interfaces.protocol.IWriterProtocol;
 import com.littlebayreal.easysocketlib.protocol.DefaultNormalReaderProtocol;
+import com.littlebayreal.easysocketlib.protocol.DefaultNormalWriterProtocol;
 
 import java.nio.ByteOrder;
 
@@ -54,7 +57,11 @@ public class EasySocketOptions implements IIOCoreOptions {
      * Socket通讯中,业务层定义的数据包包头格式
      */
     private IReaderProtocol mReaderProtocol;
-    /**
+	/**
+	 * Socket通讯中,业务层定义的数据发送协议格式 （2020/8/21 0.1.0 添加发送可自定义转义策略）
+	 */
+	private IWriterProtocol mWriterProtocol;
+	/**
      * 发送给服务器时单个数据包的总长度
      */
     private int mWritePackageBytes;
@@ -62,7 +69,11 @@ public class EasySocketOptions implements IIOCoreOptions {
      * 从服务器读取时单次读取的缓存字节长度,数值越大,读取效率越高.但是相应的系统消耗将越大
      */
     private int mReadPackageBytes;
-    /**
+	/**
+	 * 是否开启脉搏（2020/8/21 0.1.0 添加脉搏可控制开启）
+	 */
+	private boolean isOpenPulse;
+	/**
      * 脉搏频率单位是毫秒
      */
     private long mPulseFrequency;
@@ -187,7 +198,14 @@ public class EasySocketOptions implements IIOCoreOptions {
             mOptions.mReaderProtocol = readerProtocol;
             return this;
         }
-
+        public Builder setWriterProtocol(IWriterProtocol writerProtocol){
+        	mOptions.mWriterProtocol = writerProtocol;
+        	return this;
+		}
+		public Builder setOpenPulse(boolean isOpenPulse){
+        	mOptions.isOpenPulse = isOpenPulse;
+        	return this;
+		}
         /**
          * 设置脉搏间隔频率<br>
          * 单位是毫秒<br>
@@ -366,7 +384,9 @@ public class EasySocketOptions implements IIOCoreOptions {
         return isConnectionHolden;
     }
 
-    public int getPulseFeedLoseTimes() {
+	public boolean isOpenPulse() { return isOpenPulse; }
+
+	public int getPulseFeedLoseTimes() {
         return mPulseFeedLoseTimes;
     }
 
@@ -397,7 +417,9 @@ public class EasySocketOptions implements IIOCoreOptions {
     public IReaderProtocol getReaderProtocol() {
         return mReaderProtocol;
     }
-
+    public IWriterProtocol getWriterProtocol(){
+		return mWriterProtocol;
+	}
     @Override
     public int getMaxReadDataMB() {
         return mMaxReadDataMB;
@@ -427,10 +449,12 @@ public class EasySocketOptions implements IIOCoreOptions {
 	public static EasySocketOptions getDefault() {
         EasySocketOptions okOptions = new EasySocketOptions();
         okOptions.isResendMode = false;
+        okOptions.isOpenPulse = true;
         okOptions.mPulseFrequency = 5 * 1000;
         okOptions.mIOThreadMode = IOThreadMode.DUPLEX;
         okOptions.mReaderProtocol = new DefaultNormalReaderProtocol();
-        okOptions.mMaxReadDataMB = 1;
+        okOptions.mWriterProtocol = new DefaultNormalWriterProtocol();
+        okOptions.mMaxReadDataMB = 5;
         okOptions.mConnectTimeoutSecond = 3;
         okOptions.mWritePackageBytes = 100;
         okOptions.mReadPackageBytes = 50;
@@ -443,7 +467,7 @@ public class EasySocketOptions implements IIOCoreOptions {
         okOptions.mOkSocketFactory = null;
         okOptions.isCallbackInIndependentThread = true;
         okOptions.mCallbackThreadModeToken = null;
-//        okOptions.mSocketResendHandler = new DefaultResendActionHandler();
+        okOptions.mSocketResendHandler = new DefaultResendActionHandler();
         return okOptions;
     }
 

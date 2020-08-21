@@ -14,14 +14,11 @@ import androidx.appcompat.widget.SwitchCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.gson.JsonObject;
 import com.littlebayreal.easysocket.adapter.LogAdapter;
 import com.littlebayreal.easysocket.data.LogBean;
 import com.littlebayreal.easysocket.data.PulseBean;
-import com.littlebayreal.easysocket.data.PulseRequestBean;
 import com.littlebayreal.easysocket.data.Register;
 import com.littlebayreal.easysocketlib.EasySocket;
-import com.littlebayreal.easysocketlib.SLog;
 import com.littlebayreal.easysocketlib.base.ConnectionInfo;
 import com.littlebayreal.easysocketlib.base.EasySocketOptions;
 import com.littlebayreal.easysocketlib.client.delegate.action.SocketActionAdapter;
@@ -39,7 +36,6 @@ import com.littlebayreal.easysocketlib.interfaces.protocol.IHeaderProtocol;
 import com.littlebayreal.easysocketlib.interfaces.send.IPulseSendable;
 import com.littlebayreal.easysocketlib.interfaces.send.ISendable;
 import com.littlebayreal.easysocketlib.protocol.CommonReaderProtocol;
-import com.littlebayreal.easysocketlib.protocol.CustomCommonReaderProtocol;
 import com.littlebayreal.easysocketlib.util.BitOperator;
 import com.littlebayreal.easysocketlib.util.HexStringUtils;
 import com.littlebayreal.easysocketlib.util.SerialNumGen;
@@ -73,33 +69,31 @@ public class ComplexDemoActivity extends AppCompatActivity {
 			//发送握手包
 //            mManager.send(new HandShakeBean());
 			//发送注册报文
-//			Register register = new Register("注册");
-//			IHeaderProtocol iHeaderProtocol = new Jt808ProtocolHeader.Builder()
-//				.setMsgId(0x0100)
-//				.setTerminalPhone("10512999999").build();
-//			register.setHeaderProtocol(iHeaderProtocol);
-//			register.setSerialNum(SerialNumGen.getInstance().getSerialNum());
-//			mManager.send(register);
-			mConnect.setText("DisConnect");
-//			initSwitch();
-
-			//设置心跳
-			//设置心跳  首次触发可以在鉴权成功之后 调用mIconnectManager.getPulseManager().pulse();
-			PulseRequestBean pulseRequestData = new PulseRequestBean();
+			Register register = new Register("注册");
 			IHeaderProtocol iHeaderProtocol = new Jt808ProtocolHeader.Builder()
-				.setMsgId(0x0002)
+				.setMsgId(0x0100)
 				.setTerminalPhone("10512999999").build();
-			pulseRequestData.setSerialNum(SerialNumGen.getInstance().getSerialNum());
-			pulseRequestData.setHeaderProtocol(iHeaderProtocol);
-			mManager.getPulseManager().setPulseSendable(pulseRequestData);
-
-//			PulseBean pulseBean = new PulseBean();
+			register.setHeaderProtocol(iHeaderProtocol);
+			register.setSerialNum(SerialNumGen.getInstance().getSerialNum());
+			mManager.send(register);
+			mConnect.setText("DisConnect");
+			initSwitch();
+//			//设置心跳  首次触发可以在鉴权成功之后 调用mIconnectManager.getPulseManager().pulse();
+//			PulseRequestBean pulseRequestData = new PulseRequestBean();
 //			iHeaderProtocol = new Jt808ProtocolHeader.Builder()
-//				.setMsgId(0x0300)
-//				.setTerminalPhone("15850101933").build();
-//			pulseBean.setSerialNum(SerialNumGen.getInstance().getSerialNum());
-//			pulseBean.setHeaderProtocol(iHeaderProtocol);
-//			mManager.getPulseManager().setPulseSendable(pulseBean);
+//				.setMsgId(0x0002)
+//				.setTerminalPhone("10512999999").build();
+//			pulseRequestData.setSerialNum(SerialNumGen.getInstance().getSerialNum());
+//			pulseRequestData.setHeaderProtocol(iHeaderProtocol);
+//			mManager.getPulseManager().setPulseSendable(pulseRequestData);
+            //设置心跳
+			PulseBean pulseBean = new PulseBean();
+			iHeaderProtocol = new Jt808ProtocolHeader.Builder()
+				.setMsgId(0x0300)
+				.setTerminalPhone("15850101933").build();
+			pulseBean.setSerialNum(SerialNumGen.getInstance().getSerialNum());
+			pulseBean.setHeaderProtocol(iHeaderProtocol);
+			mManager.getPulseManager().setPulseSendable(pulseBean);
 			mIPET.setEnabled(true);
 			mPortET.setEnabled(true);
 		}
@@ -172,7 +166,7 @@ public class ComplexDemoActivity extends AppCompatActivity {
 		@Override
 		public void onSocketWriteResponse(ConnectionInfo info, String action, ISendable data) {
 			logSend(HexStringUtils.toHexString(data.parse()));
-			byte[] bytes = data.parse();
+//			byte[] bytes = data.parse();
 //            bytes = Arrays.copyOfRange(bytes, 4, bytes.length);
 //            String str = new String(bytes, Charset.forName("utf-8"));
 //            JsonObject jsonObject = new JsonParser().parse(str).getAsJsonObject();
@@ -342,13 +336,18 @@ public class ComplexDemoActivity extends AppCompatActivity {
 					return;
 				}
 				String ip = mIPET.getText().toString();
-				String portStr = mPortET.getText().toString();
-				JsonObject jsonObject = new JsonObject();
-				jsonObject.addProperty("cmd", 57);
-				jsonObject.addProperty("data", ip + ":" + portStr);
+				int port = Integer.parseInt(mPortET.getText().toString());
+//				JsonObject jsonObject = new JsonObject();
+//				jsonObject.addProperty("cmd", 57);
+//				jsonObject.addProperty("data", ip + ":" + portStr);
 //                DefaultSendBean bean = new DefaultSendBean();
 //                bean.setContent(new Gson().toJson(jsonObject));
 //                mManager.send(bean);
+				//重连新的服务器
+				ConnectionInfo redirectInfo = new ConnectionInfo(ip, port);
+                redirectInfo.setBackupInfo(mInfo.getBackupInfo());
+                mManager.getReconnectionManager().addIgnoreException(RedirectException.class);
+                mManager.disconnect(new RedirectException(redirectInfo));
 			}
 		});
 

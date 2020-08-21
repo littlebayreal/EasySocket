@@ -3,6 +3,7 @@ package com.littlebayreal.easysocketlib.iothreads;
 
 import com.littlebayreal.easysocketlib.SLog;
 import com.littlebayreal.easysocketlib.base.AbsLoopThread;
+import com.littlebayreal.easysocketlib.base.ConnectionInfo;
 import com.littlebayreal.easysocketlib.base.EasySocketOptions;
 import com.littlebayreal.easysocketlib.client.delegate.io.ReaderImpl;
 import com.littlebayreal.easysocketlib.client.delegate.io.WriterImpl;
@@ -11,8 +12,8 @@ import com.littlebayreal.easysocketlib.interfaces.io.IIOManager;
 import com.littlebayreal.easysocketlib.interfaces.io.IReader;
 import com.littlebayreal.easysocketlib.interfaces.io.IStateSender;
 import com.littlebayreal.easysocketlib.interfaces.io.IWriter;
-import com.littlebayreal.easysocketlib.interfaces.send.ISendable;
 import com.littlebayreal.easysocketlib.interfaces.protocol.IReaderProtocol;
+import com.littlebayreal.easysocketlib.interfaces.send.ISendable;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -26,6 +27,8 @@ public class IOThreadManager implements IIOManager<EasySocketOptions> {
     protected InputStream mInputStream;
 
     protected OutputStream mOutputStream;
+
+	protected ConnectionInfo mConnectionInfo;
 
     private volatile EasySocketOptions mOkOptions;
 
@@ -44,22 +47,28 @@ public class IOThreadManager implements IIOManager<EasySocketOptions> {
     private EasySocketOptions.IOThreadMode mCurrentThreadMode;
 
     public IOThreadManager(InputStream inputStream,
-                           OutputStream outputStream,
-                           EasySocketOptions okOptions,
-                           IStateSender stateSender) {
-        mInputStream = inputStream;
-        mOutputStream = outputStream;
-        mOkOptions = okOptions;
-        mSender = stateSender;
-        initIO();
+						   OutputStream outputStream,
+						   EasySocketOptions okOptions,
+						   IStateSender stateSender) {
+       this(null,inputStream,outputStream,okOptions,stateSender);
     }
-
+	public IOThreadManager(ConnectionInfo connectionInfo, InputStream inputStream,
+						   OutputStream outputStream,
+						   EasySocketOptions okOptions,
+						   IStateSender stateSender) {
+		mConnectionInfo = connectionInfo;
+		mInputStream = inputStream;
+		mOutputStream = outputStream;
+		mOkOptions = okOptions;
+		mSender = stateSender;
+		initIO();
+	}
     public void initIO() {
     	//检测协议头是否正常
         assertHeaderProtocolNotEmpty();
-        mReader = new ReaderImpl();
+        mReader = new ReaderImpl(mConnectionInfo != null?mConnectionInfo.getConnectionName():"");
         mReader.initialize(mInputStream, mSender);
-        mWriter = new WriterImpl();
+        mWriter = new WriterImpl(mConnectionInfo != null?mConnectionInfo.getConnectionName():"");
         mWriter.initialize(mOutputStream, mSender);
     }
 

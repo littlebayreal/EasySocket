@@ -1,7 +1,8 @@
-package com.littlebayreal.easysocketlib.protocol;
+package com.littlebayreal.easysocket;
 
 import com.littlebayreal.easysocketlib.SLog;
 import com.littlebayreal.easysocketlib.interfaces.protocol.IByteEscape;
+import com.littlebayreal.easysocketlib.protocol.CommonReaderProtocol;
 import com.littlebayreal.easysocketlib.util.BitOperator;
 import com.littlebayreal.easysocketlib.util.HexStringUtils;
 

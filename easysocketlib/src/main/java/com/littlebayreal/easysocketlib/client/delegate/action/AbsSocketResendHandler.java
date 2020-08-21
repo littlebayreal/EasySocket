@@ -21,6 +21,8 @@ public abstract class AbsSocketResendHandler extends SocketActionAdapter impleme
 	public void attach(IConnectionManager manager, IResend<BaseSendData> iResend, IRegister<ISocketActionListener, IConnectionManager> register) {
 		this.mManager = manager;
 		this.iResend = iResend;
+		//设置用户的移除策略
+		setRemovePolicy();
 		//实际调用的是AbsConnectionManager中的registerReceiver方法 actionDispatcher获得actionhandler
 		register.registerReceiver(this);
 	}
@@ -33,7 +35,8 @@ public abstract class AbsSocketResendHandler extends SocketActionAdapter impleme
 		if (iResend != null)
 			iResend.add(iSendable);
 	}
-//    public abstract void removeForResend();
+	//用户自定义的移除策略
+	public abstract void setRemovePolicy();
 
 	public void dead() {
 		if (iResend != null)

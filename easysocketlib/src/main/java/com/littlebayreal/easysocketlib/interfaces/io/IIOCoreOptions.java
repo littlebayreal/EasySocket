@@ -1,6 +1,7 @@
 package com.littlebayreal.easysocketlib.interfaces.io;
 
 import com.littlebayreal.easysocketlib.interfaces.protocol.IReaderProtocol;
+import com.littlebayreal.easysocketlib.interfaces.protocol.IWriterProtocol;
 
 import java.nio.ByteOrder;
 
@@ -11,6 +12,8 @@ public interface IIOCoreOptions {
     int getMaxReadDataMB();
 
     IReaderProtocol getReaderProtocol();
+	//（2020/8/21 0.1.0 增加对写入数据的自定义转义策略）
+    IWriterProtocol getWriterProtocol();
 
     ByteOrder getWriteByteOrder();
 
@@ -19,6 +22,4 @@ public interface IIOCoreOptions {
     int getWritePackageBytes();
 
     boolean isDebug();
-    //打开流水号
-//    boolean getIsOpenSerialNum();
 }

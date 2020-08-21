@@ -3,11 +3,15 @@ package com.littlebayreal.easysocketlib.client.pojo;
 import com.littlebayreal.easysocketlib.client.delegate.io.AbsSendable;
 import com.littlebayreal.easysocketlib.config.APIConfig;
 import com.littlebayreal.easysocketlib.interfaces.protocol.IHeaderProtocol;
+import com.littlebayreal.easysocketlib.interfaces.protocol.IWriterProtocol;
 import com.littlebayreal.easysocketlib.util.BitOperator;
 
 import java.util.ArrayList;
 import java.util.List;
-
+/**
+ * 2020/8/21 create by LiTtleBayReal
+ * 默认的Isender发送实现类
+ */
 public abstract class BaseSendData extends AbsSendable {
 	//协议头
     private IHeaderProtocol mProtocolHeader;
@@ -44,7 +48,23 @@ public abstract class BaseSendData extends AbsSendable {
 		byte[] sendbytes = BitOperator.concatAll(flag, srcbytes, check, flag);
 		return sendbytes;
 	}
-
+    public byte[] parse(IWriterProtocol iWriterProtocol) throws Exception {
+		byte[] bodybytes = generateBodyBytes();
+		mProtocolHeader.setBodyLength(bodybytes.length);
+		mProtocolHeader.setSerialNum(mSerialNum);
+		byte[] headbytes = mProtocolHeader.getHeaderBytes();
+		List<byte[]> listbytes = new ArrayList<>();
+		//添加消息头
+		listbytes.add(headbytes);
+		//添加消息体
+		listbytes.add(bodybytes);
+		byte[] srcbytes = BitOperator.concatAll(listbytes);
+		byte[] check = new byte[]{(byte) (BitOperator.getCheckSum4JT808(srcbytes, 0, srcbytes.length))};
+		byte[] flag = new byte[]{APIConfig.pkg_delimiter};
+		byte[] sendbytes = BitOperator.concatAll(flag, srcbytes, check, flag);
+		return iWriterProtocol.getIByteEscape().
+			encodeBytes(sendbytes,iWriterProtocol.getEscapeStart(),iWriterProtocol.getEscapeEnd(sendbytes));
+	}
 	public boolean isReSend() {
 		return reSend;
 	}

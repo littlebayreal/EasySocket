@@ -51,10 +51,10 @@ public class ClientIOManager implements IIOManager<EasyServerOptions> {
         assertHeaderProtocolNotEmpty();
 		if (mOptions.getReaderProtocol() instanceof CommonReaderProtocol){
 			mReader = new ResendReaderImpl("server");
-			mWriter = new ResendWriterImpl();
+			mWriter = new ResendWriterImpl("server");
 		}else {
-			mReader = new ReaderImpl();
-			mWriter = new WriterImpl();
+			mReader = new ReaderImpl("server");
+			mWriter = new WriterImpl("server");
 		}
         setOkOptions(mOptions);
 

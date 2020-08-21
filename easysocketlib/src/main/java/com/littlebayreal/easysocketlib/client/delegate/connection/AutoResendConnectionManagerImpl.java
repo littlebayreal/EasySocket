@@ -32,7 +32,7 @@ import javax.net.ssl.TrustManager;
  * Create by LiTtleBayReal
  * 增加了补传能力的连接管理器
  */
-public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
+public class AutoResendConnectionManagerImpl extends AbsConnectionManager {
 	/**
 	 * 套接字
 	 */
@@ -218,6 +218,7 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 			mReconnectionManager.attach(this);
 			SLog.i("ReconnectionManager is attached.");
 		}
+
 		String info = mRemoteConnectionInfo.getIp() + ":" + mRemoteConnectionInfo.getPort();
 		mConnectThread = new ConnectionThread(" Connect thread for " + info);
 		//设置连接线程为守护线程
@@ -232,22 +233,16 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 		public void run() {
 			try {
 				mSocket = getSocketByConfig();
-			} catch (Exception e) {
-				if (mOptions.isDebug()) {
-					e.printStackTrace();
-				}
-				throw new UnConnectException("Create socket failed.", e);
-			}
-			try {
 				if (mLocalConnectionInfo != null) {
 					SLog.i("try bind: " + mLocalConnectionInfo.getIp() + " port:" + mLocalConnectionInfo.getPort());
 					mSocket.bind(new InetSocketAddress(mLocalConnectionInfo.getIp(), mLocalConnectionInfo.getPort()));
 				}
+
 				SLog.i("Start connect: " + mRemoteConnectionInfo.getIp() + ":" + mRemoteConnectionInfo.getPort() + " socket server...");
 				mSocket.connect(new InetSocketAddress(mRemoteConnectionInfo.getIp(), mRemoteConnectionInfo.getPort()), mOptions.getConnectTimeoutSecond() * 1000);
 				//关闭Nagle算法,无论TCP数据报大小,立即发送
 				mSocket.setTcpNoDelay(false);
-				mSocket.setSoLinger(true, 1);
+				mSocket.setSoLinger(true,0);
 				resolveManager();
 				sendBroadcast(IAction.ACTION_CONNECTION_SUCCESS);
 				SLog.i("Socket server: " + mRemoteConnectionInfo.getIp() + ":" + mRemoteConnectionInfo.getPort() + " connect successful!");
@@ -268,11 +263,12 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 	 * @throws IOException
 	 */
 	private void resolveManager() throws IOException {
-		//初始化心跳管理器
+		//初始化心跳管理器(如果选择不打开心跳管理器 那么将不会创建)
+	    if (mOptions.isOpenPulse())//(2020/8/21 0.1.0)
 		mPulseManager = new PulseManager(this, mOptions);
-
 		//初始化socket的读写进程
 		mManager = new ResendIOThreadManager(
+			getRemoteConnectionInfo(),
 			mSocket.getInputStream(),
 			mSocket.getOutputStream(),
 			mOptions,
@@ -281,6 +277,7 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 	}
 	@Override
 	public void disconnect(Exception exception) {
+//		SLog.i("disconnect断开连接方法调用,本次错误信息:"+ exception.getMessage());
 		synchronized (this) {
 			if (isDisconnecting) {
 				return;
@@ -361,13 +358,11 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 					} catch (IOException e) {
 					}
 				}
-
 				if (mActionHandler != null) {
 					mActionHandler.detach(AutoResendConnectionManagerImpl.this);
 					SLog.i("mActionHandler is detached.");
 					mActionHandler = null;
 				}
-
 			} finally {
 				isDisconnecting = false;
 				isConnectionPermitted = true;
@@ -390,26 +385,22 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 		if (mOptions.getOkSocketFactory() != null) {
 			return mOptions.getOkSocketFactory().createSocket(mRemoteConnectionInfo, mOptions);
 		}
-
 		//默认操作
 		OkSocketSSLConfig config = mOptions.getSSLConfig();
 		if (config == null) {
 			return new Socket();
 		}
-
 		SSLSocketFactory factory = config.getCustomSSLFactory();
 		if (factory == null) {
 			String protocol = "SSL";
 			if (!TextUtils.isEmpty(config.getProtocol())) {
 				protocol = config.getProtocol();
 			}
-
 			TrustManager[] trustManagers = config.getTrustManagers();
 			if (trustManagers == null || trustManagers.length == 0) {
 				//缺省信任所有证书
 //                trustManagers = new TrustManager[]{new DefaultX509ProtocolTrustManager()};
 			}
-
 			try {
 				SSLContext sslContext = SSLContext.getInstance(protocol);
 				sslContext.init(config.getKeyManagers(), trustManagers, new SecureRandom());
@@ -421,7 +412,6 @@ public class AutoResendConnectionManagerImpl extends AbsConnectionManager{
 				SLog.e(e.getMessage());
 				return new Socket();
 			}
-
 		} else {
 			try {
 				return factory.createSocket();

@@ -18,7 +18,9 @@ import java.nio.ByteBuffer;
 public class ReaderImpl extends AbsReader {
     //残留的数据
     private ByteBuffer mRemainingBuf;
-
+	public ReaderImpl(String threadName){
+		super(threadName);
+	}
     @Override
     public void read() throws RuntimeException {
         OriginalData originalData = new OriginalData();
@@ -53,16 +55,16 @@ public class ReaderImpl extends AbsReader {
             //设置回传数据的头
             originalData.setHeadBytes(headBuf.array());
             if (SLog.isDebug()) {
-                SLog.i("read head: " + HexStringUtils.toHexString(headBuf.array()));
+                SLog.i(mThreadName +"read head: " + HexStringUtils.toHexString(headBuf.array()));
             }
             //从头部定义拿到报文的长度
             int bodyLength = headerProtocol.getBodyLength(originalData.getHeadBytes(), mOkOptions.getReadByteOrder());
             if (SLog.isDebug()) {
-                SLog.i("need read body length: " + bodyLength);
+                SLog.i(mThreadName +" need read body length: " + bodyLength);
             }
             if (bodyLength > 0) {
                 if (bodyLength > mOkOptions.getMaxReadDataMB() * 1024 * 1024) {
-                    throw new ReadException("Need to follow the transmission protocol.\r\n" +
+                    throw new ReadException(mThreadName +" Need to follow the transmission protocol.\r\n" +
                             "Please check the client/server code.\r\n" +
                             "According to the packet header data in the transport protocol, the package length is " + bodyLength + " Bytes.\r\n" +
                             "You need check your <ReaderProtocol> definition");
@@ -111,7 +113,7 @@ public class ReaderImpl extends AbsReader {
                 }
             } else if (bodyLength < 0) {
                 throw new ReadException(
-                        "read body is wrong,this socket input stream is end of file read " + bodyLength + " ,that mean this socket is disconnected by server");
+					mThreadName +" read body is wrong,this socket input stream is end of file read " + bodyLength + " ,that mean this socket is disconnected by server");
             }
             mStateSender.sendBroadcast(IOAction.ACTION_READ_COMPLETE, originalData);
         } catch (Exception e) {
@@ -127,7 +129,7 @@ public class ReaderImpl extends AbsReader {
             //如果从输入流中读取的长度等于-1，那么意味着连接管道已断开，抛出错误，框架会自动处理
             if (value == -1) {
                 throw new ReadException(
-                        "read head is wrong, this socket input stream is end of file read " + value + " ,that mean this socket is disconnected by server");
+					mThreadName + " read head is wrong, this socket input stream is end of file read " + value + " ,that mean this socket is disconnected by server");
             }
             headBuf.put(bytes);
         }
@@ -158,8 +160,8 @@ public class ReaderImpl extends AbsReader {
             }
         }
         if (SLog.isDebug()) {
-            SLog.i("read total bytes: " + HexStringUtils.toHexString(byteBuffer.array()));
-            SLog.i("read total length:" + (byteBuffer.capacity() - byteBuffer.remaining()));
+            SLog.i(mThreadName +" read total bytes: " + HexStringUtils.toHexString(byteBuffer.array()));
+            SLog.i(mThreadName +" read total length:" + (byteBuffer.capacity() - byteBuffer.remaining()));
         }
     }
 
